@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lesson 0002 – Reviewing code like an AI evaluator</title>
+  <link rel="stylesheet" href="../assets/lesson-style.css">
+</head>
+<body>
+<main>
+  <header class="lesson-header">
+    <p class="lesson-id">Lesson 0002</p>
+    <h1>Reviewing code like an AI evaluator</h1>
+    <p class="lesson-tagline">Find defects systematically and write feedback precise enough to train a model on — the exact skill Alignerr's assessment measures.</p>
+  </header>
+
+  <section id="mission">
+    <h2>How this fits your mission</h2>
+    <p>You are applying to <strong>Alignerr</strong> (Software Engineer, $20–100/hr, and Task Author, $80–120/hr). Both roles test the same core skill: <strong>evaluating code and explaining what's wrong with it, in writing</strong>.</p>
+    <p>Contract income from AI platforms is a pillar of your relocation plan — it funds the savings goals and builds the "get hired abroad" track. One strong assessment performance is worth more than ten application form-fields.</p>
+  </section>
+
+  <section id="knowledge">
+    <h2>The evaluator's toolkit (5 minutes to learn)</h2>
+
+    <h3>Skill 1 — The four review lenses</h3>
+    <p>Review every snippet through exactly four lenses, in this order:</p>
+    <ol class="steps">
+      <li><strong>Correctness</strong><br>Does it produce the right output for all inputs? Look for: off-by-one bounds, unhandled edge cases (empty array, null, single element), async values never awaited, wrong return paths.</li>
+      <li><strong>Security</strong><br>Can input reach a dangerous sink? Look for: user data interpolated into SQL or HTML, unvalidated input, secrets or internals exposed.</li>
+      <li><strong>Performance</strong><br>Does work scale with input size? Look for: a query or network call inside a loop (N+1), repeated work that could be hoisted, O(n²) where O(n) exists.</li>
+      <li><strong>Readability</strong><br>Could a teammate maintain this? Look for: misleading names, loose equality masking types, dead code, unnecessary complexity. Ranked last — never lead with style when correctness bugs exist.</li>
+    </ol>
+
+    <h3>Skill 2 — The finding format</h3>
+    <p>Every comment you write follows one shape:</p>
+    <div class="callout">
+      <p><strong>Finding → Evidence → Fix.</strong><br>
+      <em>"Line 4: <code>db.query()</code> returns a Promise that is never awaited, so <code>user.active</code> is undefined on every iteration and the function silently returns <code>[]</code>. Fix: <code>await db.query(...)</code>."</em></p>
+    </div>
+    <p>Weak reviewers write "the loop looks wrong." Evaluators write a claim, the mechanism that proves it, and the correction. That difference is the job.</p>
+
+    <h3>Skill 3 — Checkable rubric lines (Task Author)</h3>
+    <p>A rubric criterion is only good if two reviewers would score it identically. Test every criterion: <strong>could a plausible-but-wrong solution still pass it?</strong></p>
+    <ul>
+      <li>❌ "The code is efficient." — unmeasurable.</li>
+      <li>✅ "The function makes exactly one DB query regardless of <code>userIds.length</code>." — observable, checkable.</li>
+    </ul>
+
+    <div class="callout callout-quiet">
+      <p><strong>Recommended primary source:</strong> <a href="https://google.github.io/eng-practices/review/reviewer/" target="_blank" rel="noopener">Google Engineering Practices — How to do a code review</a>. The canonical industry reference for what a good review looks like and how to write comments. Skim "What to look for" before your assessment.</p>
+    </div>
+  </section>
+
+  <section id="exercise-1">
+    <h2>Exercise 1 — Review this AI-generated function</h2>
+    <div class="exercise">
+      <p class="exercise-title">The function below was "written by an AI assistant." It should return the email addresses of all active users given a list of IDs. <strong>It contains at least 5 defects.</strong> Write your review on paper or in a scratch file — one comment per defect, in Finding → Evidence → Fix format — <em>before</em> opening the answers.</p>
+
+<pre><code>1  async function getActiveUserEmails(userIds) {
+2    const emails = [];
+3    for (let i = 0; i <= userIds.length; i++) {
+4      const user = db.query(
+5        `SELECT email, active FROM users WHERE id = ${userIds[i]}`
+6      );
+7      if (user.active == true) {
+8        emails.push(user.email);
+9      }
+10   }
+11   return emails;
+12 }</code></pre>
+
+      <p>Spend 10–15 minutes. Attempt every lens before revealing.</p>
+
+      <details>
+        <summary>Finding 1 — Correctness</summary>
+        <p><em>"Line 4: <code>db.query()</code> is async but never awaited — <code>user</code> is a Promise, so <code>user.active</code> is always undefined and the function silently returns <code>[]</code> for every input. This is the most severe bug: total functional failure with no error thrown. Fix: <code>const user = await db.query(...)</code>."</em></p>
+      </details>
+      <details>
+        <summary>Finding 2 — Correctness</summary>
+        <p><em>"Line 3: the loop condition <code>i <= userIds.length</code> iterates one past the last element, querying with <code>userIds[undefined index]</code> = <code>undefined</code> on the final pass. Fix: <code>i &lt; userIds.length</code>, or better, iterate with <code>for (const id of userIds)</code>."</em></p>
+      </details>
+      <details>
+        <summary>Finding 3 — Security</summary>
+        <p><em>"Line 5: <code>userIds[i]</code> is interpolated directly into the SQL string — SQL injection. Any caller-controlled value can alter the query. Fix: use a parameterized query, e.g. <code>db.query('... WHERE id = ?', [userIds[i]])</code>."</em></p>
+      </details>
+      <details>
+        <summary>Finding 4 — Performance</summary>
+        <p><em>"Lines 3–10: one database query per element — the classic N+1 pattern. For 1,000 IDs this issues 1,000 round trips. Fix: batch with <code>WHERE id IN (...)</code> in a single query."</em></p>
+      </details>
+      <details>
+        <summary>Finding 5 — Correctness (edge case)</summary>
+        <p><em>"No input validation: if <code>userIds</code> is <code>null</code> or not an array, the function throws <code>TypeError</code> rather than returning a defined result. Fix: guard the input or document the contract."</em></p>
+      </details>
+      <details>
+        <summary>Finding 6 — Readability (minor)</summary>
+        <p><em>"Line 7: <code>user.active == true</code> uses loose equality — works by accident on truthy values but masks non-boolean data (e.g. <code>'yes'</code>, <code>2</code>). Prefer <code>=== true</code> or a truthiness check with intent made explicit."</em></p>
+      </details>
+
+      <p><strong>Self-score:</strong> count the defects you found (max 6) and — separately — how many you wrote in Finding → Evidence → Fix format. Finding the bug but writing "loop is off" scores half. The format is half the skill.</p>
+    </div>
+  </section>
+
+  <section id="exercise-2">
+    <h2>Exercise 2 — Turn a bug into a rubric line</h2>
+    <div class="exercise">
+      <p class="exercise-title">Task Author skill: imagine the snippet above is a task where the agent must fix it. Write one rubric criterion that verifies the N+1 fix.</p>
+      <p>Before revealing, apply the test: <em>could a wrong solution still pass your criterion?</em></p>
+      <details>
+        <summary>Model rubric criterion</summary>
+        <p><em>"Correctness is verified by a test asserting the function performs exactly one database query when called with any <code>userIds</code> array, including length ≥ 2, and still returns the correct set of active-user emails."</em></p>
+        <p>Why it works: it names the observable behavior (query count), the varying input, and the still-required correct output — a wrong fix (e.g. caching, or fetching one fewer query) fails it cleanly.</p>
+      </details>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <h2>Checkpoint — which comment is evaluator-grade?</h2>
+    <div class="quiz"
+         data-correct-feedback="Correct. Claim + mechanism + fix, with a line reference — that is what trains a model."
+         data-incorrect-feedback="Look again at the highlighted answer: it states the defect, the mechanism, and the fix. The other two are either vague or wrong.">
+      <p class="quiz-question">A reviewer finds the off-by-one bug in the exercise. Which written comment is strongest?</p>
+      <button class="quiz-option" data-correct="false">"The loop bound looks slightly off — it might fail on some edge-case inputs worth checking."</button>
+      <button class="quiz-option" data-correct="true">"Line 3: i &lt;= length reads one element past the end, passing undefined to the query on the last iteration. Fix: i &lt; length."</button>
+      <button class="quiz-option" data-correct="false">"Iterating by index is inefficient here — a for-of loop would be cleaner and noticeably faster."</button>
+      <p class="quiz-feedback" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section id="retrieval">
+    <h2>Quick self-check (retrieval)</h2>
+    <p>Answer from memory — this builds the storage strength you need tomorrow:</p>
+    <ol>
+      <li>Name the four review lenses, in order of priority.</li>
+      <li>What are the three parts of an evaluator-grade finding?</li>
+      <li>Why is "silently returns an empty array" a stronger observation than "the code fails"?</li>
+      <li>What question do you ask to test whether a rubric criterion is checkable?</li>
+      <li>Which lens do you never lead with, even if you spot issues there first?</li>
+    </ol>
+    <p>If any answer felt shaky, re-read only that section, then try again.</p>
+  </section>
+
+  <section id="reference-link">
+    <h2>Keep for later</h2>
+    <p>Compressed version of this lesson for pre-assessment review: <a href="../reference/evaluator-code-review-checklist.html">Evaluator code-review checklist</a>.</p>
+  </section>
+
+  <footer class="lesson-footer">
+    <p><strong>Next step:</strong> do the Alignerr application tomorrow morning. When they give you a code sample, run the four lenses and write every comment in Finding → Evidence → Fix.</p>
+    <p>If anything is unclear, or you want a second buggy snippet to drill with, ask in our chat and mention <em>"Lesson 0002"</em> — I can critique your review like the evaluator would.</p>
+  </footer>
+</main>
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

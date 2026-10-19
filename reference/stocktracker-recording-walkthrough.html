@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference - Stock movement recording walkthrough</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --surface: #ffffff;
+      --surface-soft: #f1f4f8;
+      --text: #1c2430;
+      --muted: #5b6674;
+      --border: #cfd6e0;
+      --border-subtle: #e2e7ee;
+      --accent: #1f5fbf;
+      --on-accent: #ffffff;
+      --accent-soft: #e7f0fc;
+      --warn-bg: #fff4e0;
+      --warn-border: #d08a1e;
+      --ok: #1d7a3f;
+      --err: #b3261e;
+      --focus: #1f5fbf;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14181f;
+        --surface: #1c222c;
+        --surface-soft: #232b37;
+        --text: #e6ebf2;
+        --muted: #a3adba;
+        --border: #3a4454;
+        --border-subtle: #2d3642;
+        --accent: #7fb2ff;
+        --on-accent: #0b1220;
+        --accent-soft: #1d2b40;
+        --warn-bg: #3a2d12;
+        --warn-border: #c98a1e;
+        --ok: #6fd08c;
+        --err: #ff8a80;
+        --focus: #7fb2ff;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.55;
+    }
+    main { max-width: 1000px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+    h1 { font-size: 1.6rem; margin: 0.2rem 0 0.6rem; }
+    h2 { font-size: 1.25rem; margin: 2rem 0 0.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.3rem; }
+    h3 { font-size: 1.05rem; margin: 0 0 0.4rem; }
+    a { color: var(--accent); }
+    code, pre { font-family: ui-monospace, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.86rem; }
+    pre {
+      background: var(--surface-soft);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .kicker { margin: 0; color: var(--muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+    }
+    .callout p { margin: 0.3rem 0; }
+    .callout.warn { border-left-color: var(--warn-border); background: var(--warn-bg); }
+    nav ul { list-style: none; padding: 0; margin: 0.5rem 0 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; }
+    .hint { margin: 0.2rem 0 0.5rem; color: var(--text); }
+    .hint strong { color: var(--muted); font-weight: 600; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; align-items: center; margin: 0.4rem 0; }
+    .feedback { font-size: 0.92rem; color: var(--muted); min-height: 1.3em; }
+    .feedback.ok { color: var(--ok); }
+    .feedback.err { color: var(--err); }
+    .note { color: var(--muted); font-size: 0.94rem; }
+    button {
+      font: inherit;
+      padding: 0.45rem 0.9rem;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: var(--on-accent);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:focus-visible, input:focus-visible, pre:focus-visible, a:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+    label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+    input[type="text"] {
+      font: inherit;
+      width: 12rem;
+      max-width: 100%;
+      padding: 0.4rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .field { margin: 0.5rem 1.5rem 0.5rem 0; display: inline-block; vertical-align: top; }
+    .field-error { color: var(--err); font-size: 0.92rem; min-height: 1.2em; margin: 0.2rem 0 0; }
+
+    table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; font-size: 0.92rem; }
+    .table-wrap { overflow-x: auto; }
+    th, td { border: 1px solid var(--border-subtle); padding: 0.45rem 0.6rem; text-align: left; vertical-align: top; }
+    th { background: var(--surface-soft); }
+    @media (max-width: 480px) {
+      main { padding: 0.75rem 0.6rem 2rem; }
+      h1 { font-size: 1.3rem; }
+      pre { font-size: 0.8rem; }
+      .card { padding: 0.75rem; }
+    }
+  
+    main { overflow-wrap: anywhere; }
+    .step { margin: 2rem 0; padding-top: 0.5rem; border-top: 1px solid var(--border-subtle); }
+    .step-head h2 { border: 0; margin: 0.15rem 0 0.4rem; padding: 0; }
+    .badge { display: inline-block; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 0.05rem 0.6rem; font-size: 0.82rem; margin-left: 0.4rem; }
+    .block { margin: 0.7rem 0; }
+    .label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0.4rem 0 0.2rem; }
+    .say { border-left: 3px solid var(--accent); padding-left: 0.7rem; margin: 0.3rem 0; }
+    .say.click { border-left-color: var(--warn-border); }
+    ul.say { border-left: 3px solid var(--accent); padding-left: 1.6rem; margin: 0.3rem 0; }
+
+    .block ul { margin: 0.2rem 0; padding-left: 1.2rem; }
+    .field-error { color: var(--err); font-size: 0.92rem; min-height: 1.2em; margin: 0.2rem 0 0; }
+    details { margin: 1rem 0; }
+    summary { cursor: pointer; font-weight: 600; }
+
+    .read-toggle { margin: 1rem 0; }
+    .read-toggle button { font-size: 0.95rem; }
+    .read-legend { color: var(--muted); font-size: 0.88rem; margin: 0.4rem 0 0; }
+    body.read-mode #reviewer-rules,
+    body.read-mode nav,
+    body.read-mode details.prep-notes,
+    body.read-mode details.if-wrong,
+    body.read-mode #expected,
+    body.read-mode .card .actions,
+    body.read-mode .card .feedback,
+    body.read-mode #id-inputs,
+
+    body.read-mode .label,
+    body.read-mode .badge {
+      display: none;
+    }
+    body.read-mode main { max-width: 760px; }
+    body.read-mode .step { border-top: 2px solid var(--border); margin: 2.75rem 0 0; padding-top: 1.25rem; }
+    body.read-mode .step-head h2 { font-size: 1.55rem; }
+    body.read-mode .say { font-size: 1.14rem; line-height: 1.75; border-left-width: 5px; padding-left: 1rem; margin: 0.65rem 0; }
+    body.read-mode .note { font-size: 0.85rem; }
+    body.read-mode pre { font-size: 0.8rem; opacity: 0.8; }
+    body.read-mode .card { box-shadow: none; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="kicker">Reference</p>
+    <h1>Stock movement recording walkthrough</h1>
+  </header>
+
+  <div class="callout"><p>Read the SAY paragraphs and follow the code in order. Only say a result passed if it matches your screen. Times are a guide.</p></div>
+<div class="read-toggle"><button type="button" id="read-mode-toggle" aria-pressed="false">Switch to reading view</button><p class="read-legend">Reading view hides buttons, tables and checklists so the script reads top to bottom. Blue bar = narration (SAY). Orange bar = action (CLICK). Switch back to the full view to copy code or check line numbers.</p></div>
+<section id="reviewer-rules" aria-labelledby="reviewer-rules-title">
+  <h2 id="reviewer-rules-title">What the reviewer wants</h2>
+  <div class="table-wrap"><table><thead><tr><th scope="col">Problem in take 1</th><th scope="col">Rule in take 2</th></tr></thead><tbody>
+  <tr><td>Speaking too fast (stockOnHand at 2:50, and &gt;220 wpm sections)</td><td>Slow. Finish every sentence. One idea per sentence. Breathe between sentences.</td></tr>
+  <tr><td>Highlighting code with the mouse (3:38, 6:55)</td><td><strong>Never drag-select or click to highlight.</strong> Say the line number instead: "on line 32 we have&hellip;"</td></tr>
+  <tr><td>"We need sku/name" for form fields (6:00)</td><td>Every click = <strong>What + Where + Why</strong>: "I click the Key field in the first row of the form-data table to type sku, because the product needs a code."</td></tr>
+  <tr><td>Clicks too fast, no pause (6:55)</td><td>Click &rarr; count silently "one" &rarr; continue speaking.</td></tr>
+  <tr><td>DBeaver table clicks not narrated</td><td>"In the Database Navigator at the top left, under the Tables folder, I double-click the third item, stock_movements, to open it."</td></tr>
+  <tr><td>Mouse idle &gt; 45 s during typing (10:30&ndash;11:30)</td><td><strong>Typing is not mouse activity.</strong> Every ~25 s of typing, stop, move the mouse in a small circle over the code, say one explanatory sentence, continue.</td></tr>
+  <tr><td>"I'll change this" / "I will take this return" (12:00, 24:50)</td><td>"I double-click the word X on line Y to select it, and I type Z with my keyboard."</td></tr>
+  </tbody></table></div>
+  <p>The line numbers in this script match the stub files on the Mac (route 29; model 28–50, stockOnHand 88; controller 44, 55, 68, 80). If the files moved, re-check the numbers before recording — wrong numbers are worse than none.</p>
+  <p><strong>Legend:</strong> <strong>CLICK</strong> = a mouse action; always say the sentence <em>before</em> or <em>while</em> you do it, then pause one second. <strong>SAY</strong> = narration only. <strong>TYPE</strong> = keyboard; keep the mouse alive.</p>
+  <h3>Pre-flight (do before pressing record)</h3>
+  <ul>
+    <li>Line numbers are baked in for the stub files; re-check them on the Mac if the files changed.</li>
+    <li>Controller is back in stub state (501 + three <code>LogicException</code>s). Database is fresh (<code>stock_movements</code> empty) or use new SKU/code values.</li>
+    <li>DBeaver connected to <code>db.sqlite</code>, nothing else open.</li>
+    <li>AI completions off in VS Code. No chat pane.</li>
+    <li>Dock right, clock seconds, wallpaper changed, Accessibility Inspector running with window closed.</li>
+    <li>Rehearse Step 3 aloud once with a timer: the stockOnHand explanation should take ~25 s.</li>
+    <li>Reminder card on your desk: <strong>SAY &rarr; CLICK &rarr; PAUSE &rarr; NO HIGHLIGHTING &rarr; MOVE MOUSE WHILE TYPING.</strong></li>
+  </ul>
+</section>
+  <nav aria-label="Steps">
+    <ul>
+      <li><a href="#reviewer-rules">Reviewer rules</a></li>
+      <li><a href="#step-1">1 Task</a></li>
+      <li><a href="#step-5">5 Warehouse and IDs</a></li>
+      <li><a href="#step-7">7 Validation</a></li>
+      <li><a href="#step-11">11 IN 10</a></li>
+      <li><a href="#step-16">16 Close</a></li>
+      <li><a href="#expected">Expected results</a></li>
+    </ul>
+  </nav>
+<details class="prep-notes">
+    <summary>Preparation notes (not part of the script)</summary>
+    <div class="callout warn" role="note">
+        <p><strong>Preparation reference only. Use prepared code or request templates during a recording only if the project permits them and they are declared as starting materials. This page does not run requests or modify the database.</strong></p>
+        <p>Using a browser during recording must match the approved app list. Browser use is not automatically approved.</p>
+      </div>
+    
+      <div class="callout">
+        <p>Times are approximate. Say a result passed only after you observe the actual result. Do not finish the feature or any verification before the step that shows it.</p>
+      </div>
+    
+      <div class="callout">
+        <p>The full code blocks show what to write. Explain each part while you work; do not wait until the whole block is finished to speak.</p>
+      </div>
+    
+      <div class="callout">
+        <p><strong>Your screen layout</strong> (from the reference screenshots; positions are not permanent)</p>
+        <ul>
+          <li>Opening sequence: the task description is shown in LibreOffice; then switch to VS Code with the third Dock icon.</li>
+          <li>Dock: on the right side. Icons counted from the top: 1 Finder, 2 Launchpad, 3 VS Code, 4 Postman, 5 DBeaver.</li>
+          <li>VS Code: the opened root is <code>api</code>, not the repository root, so file paths start from <code>api</code>. The Explorer icon is the first icon in the far-left vertical toolbar. The file tree is just to its right, the editor is the large area on the right, and file tabs are at the top of the editor.</li>
+          <li>Postman: History sidebar on the left. Request tabs run along the top of the main area, with a plus sign beside the open tab. The method dropdown is at the left end of the request row, the URL field is to its right, and the blue Send button is at the right end of the same row. Headers and Body tabs sit directly below the address row. The response panel is in the lower half, with the status at its top-right edge and the JSON below it.</li>
+          <li>DBeaver: Connections panel at the upper left. Middle-panel tabs (Properties, Data, Diagram) are at the top; Data is just right of Properties. Refresh is at the lower left, below the Data grid.</li>
+          <li>AI chat pane: before recording, close it with the X beside its title, off camera, so it stays out of the capture. Do not interact with its prompts.</li>
+          <li>Recorder start and stop controls: positions not supplied. Use the required stop flow.</li>
+        </ul>
+        <p>Optional cue, only if you bring VS Code forward from another app: "Now I will open VS Code to work on the API. I am moving my cursor to the Dock on the right and clicking the third icon from the top."</p>
+        <p>If you are already in an app, stay there; do not repeat an opening action. Describe only what you actually do.</p>
+        <p>Using this script as a reference needs the permission shown in the banner above.</p>
+      </div>
+    <h3>Visible actions and expected values by step</h3>
+    <p>These are not part of the spoken script. Use them to prepare and to check your screen.</p>
+    <h4>Step 1</h4><ul><li>Show the prepared task-description document in LibreOffice. Leave the required Dock visible.</li><li>Show this task-description text:</li><li>Switch from the description to the code within 30 seconds. Do not narrate editing the description.</li></ul>
+    <h4>Step 2</h4><ul><li>Click VS Code in the right-side Dock, third icon from the top, to bring it forward from LibreOffice.</li><li>Click Explorer if the sidebar is hidden. Otherwise point to it and do not repeat the click.</li><li>Point to the app, routes and database folders. Do not toggle folders that are already expanded.</li><li>Expand routes only if it is closed, then click web.php. Point at the existing route.</li></ul>
+    <h4>Step 3</h4><ul><li>Expand only the closed folders, app and then Models. Select app/Models/StockMovement.php. Show the existing fields, casts and types.</li><li>Scroll to the existing stockOnHand method.</li><li>Select app/Http/Controllers/MovementController.php in the file tree. Point to the unfinished store, validateMovement, normalizeQtyByType and hasSufficientStockForOut. Show the store placeholder.</li></ul>
+    <h4>Step 4</h4><ul><li>Click Postman in the Dock (fourth icon from the top).</li><li>Click the plus sign beside the request tabs to open a new request.</li><li>Save the request with a useful name if your normal workflow allows it. Do not send it twice.</li><li>Click the blue Send button once, at the right end of the address row. Check the status is 201 and note data.id.</li><li>If the unique SKU is already in use, change it to a new value. Do not delete records or retry blindly.</li><li>Expected: HTTP status 201.</li><li>Expected: A data.id value for the new product.</li></ul>
+    <h4>Step 5</h4><ul><li>Stay in Postman. Click the plus sign beside the request tabs to open a new request.</li><li>Set POST and enter the locations URL in the address row.</li><li>Click the blue Send button once, at the right end of the address row. Check the status is 201 and note data.id.</li><li>Enter the product data.id and the location data.id into the fields below, only if using this page is permitted. Never assume the two IDs are the same or 1. The values are not saved between visits.</li><li>Expected: HTTP status 201.</li><li>Expected: A data.id value for the new warehouse.</li></ul>
+    <h4>Step 6</h4><ul><li>Click DBeaver in the Dock (fifth icon from the top). Confirm the connection is API db.sqlite, not local.sqlite or testing.sqlite. Do not edit cells.</li><li>Expand db.sqlite and Tables only if they are closed.</li><li>Double-click products — it opens on the Data tab. Find the demo product ID.</li><li>Click Refresh below the Data grid on the left.</li><li>Double-click locations, and click Refresh below the grid if needed. Find the demo warehouse ID.</li><li>Double-click stock_movements.</li><li>Say the line above only if the stock_movements table is empty. If it is not empty, inspect the demo product and warehouse pair and say what you actually see.</li></ul>
+    <h4>Step 7</h4><ul><li>Click VS Code in the Dock (third icon from the top).</li><li>Select the MovementController tab at the top of the editor, or select app/Http/Controllers/MovementController.php in the file tree.</li><li>Scroll to validateMovement.</li><li>Replace only the whole validateMovement method with the code below. Keep the other methods and the imports.</li><li>Change the inherited comment to: <code>Validates movement data.</code></li></ul>
+    <h4>Step 8</h4><ul><li>Scroll to normalizeQtyByType. Replace only the whole method with the code below.</li></ul>
+    <h4>Step 9</h4><ul><li>Scroll to hasSufficientStockForOut. Replace only the whole method with the code below.</li></ul>
+    <h4>Step 10</h4><ul><li>Scroll back up to store. Replace the store placeholder (the method that returns status 501) with the full store method below.</li><li>Change the inherited comment to: <code>Creates a stock movement.</code></li><li>Check the braces and method names. Keep the imports, FIELDS, index, history helper, model and routes unchanged.</li><li>Save the controller file with a normal save.</li></ul>
+    <h4>Step 11</h4><ul><li>Click Postman in the Dock (fourth icon from the top).</li><li>Click the plus sign beside the request tabs to open one new request tab for the movements.</li><li>Set POST, pick the movements URL from the suggestion list, then set the form-data body shown here.</li><li>Expected: HTTP 201.</li><li>Expected: data.qty 10.</li><li>Expected: current_stock 10.</li><li>Click the blue Send button once, at the right end of the address row. Check the response against the expected values.</li></ul>
+    <h4>Step 12</h4><ul><li>Stay in the same request tab. Click Body below the address row, change the type to OUT and the quantity to 4. Keep the product and warehouse IDs.</li><li>Expected: HTTP 201.</li><li>Expected: data.qty -4.</li><li>Expected: current_stock 6.</li><li>Click the blue Send button once, at the right end of the address row. Check the response against the expected values.</li></ul>
+    <h4>Step 13</h4><ul><li>In the same movement request tab, click Body and change the quantity to 7.</li><li>Expected: HTTP 422.</li><li>Expected: message: Insufficient stock.</li><li>Expected: current_stock 6.</li><li>Expected: requested_out 7.</li><li>Click the blue Send button once, at the right end of the address row. Check the response against the expected values.</li></ul>
+    <h4>Step 14</h4><ul><li>In the same movement request tab, click Body and change the quantity to 6. Keep the product and warehouse IDs.</li><li>Expected: HTTP 201.</li><li>Expected: data.qty -6.</li><li>Expected: current_stock 0.</li><li>Click the blue Send button once, at the right end of the address row. Check the response against the expected values.</li></ul>
+    <h4>Step 15</h4><ul><li>In the same movement request tab, click Body and change the type to IN and the quantity to 0.</li><li>Expected: HTTP 422 validation error.</li><li>Expected: No row is saved.</li><li>Expected: Do not assume a current_stock field exists in a validation error.</li><li>Click the blue Send button once, at the right end of the address row. Check the response against the expected values.</li></ul>
+    <h4>Step 16</h4><ul><li>Click DBeaver in the Dock (fifth icon from the top). In the stock_movements Data tab, click Refresh at the lower left, below the grid.</li><li>Expected: 3 rows — +10, -4, -6. Stock on hand 0. The two rejected requests saved no rows.</li><li>Click VS Code in the Dock (third icon from the top). Select the movement-controller tab at the top of the editor.</li><li>Save the completed file and show the four methods.</li><li>Keep the Dock visible.</li><li>Say the next line only once the checks shown are actually finished.</li><li>Stop the recorder using its required flow. Wait until recording has stopped before filling in metadata or opening submission pages.</li></ul>
+  </details>
+<section class="step" id="step-1" aria-labelledby="step-1-title"><header class="step-head"><p class="kicker">Step 1 <span class="badge">0:00-0:25</span></p><h2 id="step-1-title">Show task description</h2></header><div class="block"><p class="label">SAY</p><p class="say">I am showing the task in LibreOffice. I will add stock-movement recording to an inventory API, check the input and available stock, then verify responses in Postman and saved records in DBeaver.</p></div></section>
+<section class="step" id="step-2" aria-labelledby="step-2-title"><header class="step-head"><p class="kicker">Step 2 <span class="badge">0:25-1:45</span></p><h2 id="step-2-title">Project and route</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">To start working on the code, I move my cursor to the Dock on the right side of the screen and click the third icon from the top, which is Visual Studio Code.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">Visual Studio Code opens with the sidebar collapsed to icons, so I cannot see the files yet. I am moving my cursor to the vertical toolbar on the far left of the window, and I click the first icon from the top, Explorer, to open the file tree.</p></div><p class="note">(skip this click and say "the file tree is already open" if Explorer is already expanded when you arrive)</p><div class="block"><p class="label">SAY</p><p class="say">Now the file tree is open. The folder loaded is <code>api</code>, and inside it I can see <code>app</code>, <code>routes</code> and <code>database</code>. This is a small inventory API: it receives requests from another program and sends back results. Products and warehouses already exist. What is missing is the part that records stock coming in and going out, and that is what I am adding today.</p></div><div class="block"><p class="label">SAY</p><p class="say">Every request enters through a route, so I will start there.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I am moving my cursor to the file tree on the left, and I click the <code>routes</code> folder to expand it, because the route file is inside it.</p></div><p class="note">(skip if already open; say "the routes folder is already expanded")</p><div class="block"><p class="label">CLICK</p><p class="say click">Just below it, I click <code>web.php</code>, the file directly under routes, to open it in the editor on the right.</p></div><div class="block"><p class="label">SAY</p><p class="say">This is the route file. It connects each request address to the PHP code that should handle it. On line <code>29</code> is the route for this task. It is a POST to <code>/movements</code>, and it points to the <code>store</code> method of <code>MovementController</code>. POST is used because each request creates a new entry. This route already exists, so I am not changing it.</p></div><pre tabindex="0"><code>$router-&gt;post('/movements', 'MovementController@store');</code></pre><div class="block"><p class="label">SAY</p><p class="say">What I need to understand next is how a movement is stored, so I will open the model.</p></div></section>
+<section class="step" id="step-3" aria-labelledby="step-3-title"><header class="step-head"><p class="kicker">Step 3 <span class="badge">1:45-4:30</span></p><h2 id="step-3-title">Movement model and unfinished controller</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">I am moving my cursor back to the file tree on the left. I click the <code>app</code> folder to expand it, then <code>Models</code> inside it, because the movement model lives there.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">Inside Models, I click <code>StockMovement.php</code> to open it in the editor on the right.</p></div><div class="block"><p class="label">SAY</p><p class="say">This is the movement model. A model is the PHP class that lets the code read and save rows in one database table; this one is tied to the stock-movements table. Lines <code>28</code> to <code>34</code> list the fillable fields: location id, product id, note, type and quantity. These are the only fields the model is allowed to save. Just below, on lines <code>39</code> to <code>41</code>, the quantity is cast to an integer, so it is always a whole number. And on lines <code>46</code> to <code>50</code> are the three movement types. IN means stock arrives. OUT means stock leaves. ADJUST is a correction.</p></div><p class="note">(do not move the mouse to the code; just talk)</p><pre tabindex="0"><code>protected $fillable = [
+    'location_id',
+    'product_id',
+    'note',
+    'type',
+    'qty',
+];
+
+protected $casts = [
+    'qty' =&gt; 'integer',
+];
+
+public const TYPES = [
+    'IN',
+    'OUT',
+    'ADJUST'
+];</code></pre><div class="block"><p class="label">SAY</p><p class="say">That covers what a movement looks like. I am moving my cursor over the editor, and I scroll down with the mouse wheel to <code>stockOnHand</code> at the bottom of this file, the method that calculates the current stock.</p></div><div class="block"><p class="label">SAY</p><p class="say">On line <code>88</code> is <code>stockOnHand</code>, the method that calculates the current stock. It takes a product id and a location id, keeps only the movements for that pair on lines <code>89</code> and <code>90</code>, and then adds up their quantities. So the current stock is just the sum of all saved movements.</p></div><p class="note">(slowest part of the whole video — about 60 words, take 25 seconds)</p><pre tabindex="0"><code>public static function stockOnHand(int $productId, int $locationId): int
+{
+    return (int) static::where('product_id', $productId)
+        -&gt;where('location_id', $locationId)
+        -&gt;sum('qty');
+}</code></pre><div class="block"><p class="label">SAY</p><p class="say">Incoming must be stored positive and outgoing negative, otherwise this sum is wrong — and keeping that rule is the controller's job, so I will open it now.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I am moving my cursor back to the file tree on the left. Under app, I click the <code>Http</code> folder, then <code>Controllers</code>, because the request-handling code lives there.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">Inside Controllers, I click <code>MovementController.php</code> to open it in the editor.</p></div><div class="block"><p class="label">SAY</p><p class="say">This is the movement controller. A controller is the PHP class that receives a request, decides what to do with it, and sends back the response. On line <code>44</code> is the <code>store</code> method, the one the route points to. Right now it only returns status 501, Not implemented. This is the method I will write.</p></div><pre tabindex="0"><code>public function store()
+{
+    return response()-&gt;json(['message' =&gt; 'Not implemented'], 501);
+}</code></pre><div class="block"><p class="label">SAY</p><p class="say">Below it are three unfinished helpers that <code>store</code> will use. <code>validateMovement</code> on line <code>55</code> will check the input. <code>normalizeQtyByType</code> on line <code>80</code> will set the sign of the quantity. <code>hasSufficientStockForOut</code> on line <code>68</code> will check that a shipment is possible. I will fill in each one.</p></div><div class="block"><p class="label">SAY</p><p class="say">But before writing code, I want real data to test against. A movement needs an existing product and an existing warehouse, so I will create both in Postman first.</p></div></section>
+<section class="step" id="step-4" aria-labelledby="step-4-title"><header class="step-head"><p class="kicker">Step 4 <span class="badge">4:30-6:30</span></p><h2 id="step-4-title">Create product</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">I move to the Dock on the right and click the fourth icon from the top, Postman. It lets me send requests to the API without building a user interface, and I will use it to create the product.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I am moving my cursor to the top of the main area and I click the plus sign beside the tabs to open a new request. In the address row, I set the method dropdown at the left end to POST, because I am creating a record, then I click the URL field and pick <code>http://127.0.0.1:8008/products</code> from Postman's suggestion list.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">Now I will enter the product data. I move my cursor to the tabs under the address bar and click <code>Body</code>. Just below it, I choose <code>form-data</code>, because this endpoint expects the data as form fields.</p></div><p class="note">(if you use raw JSON instead, say: I click <code>raw</code>, then the dropdown beside it and choose <code>JSON</code>)</p>
+<div class="block"><p class="label">CLICK</p><p class="say click">In the form-data table below, I fill the four rows one by one. In the first row, I click the Key cell and type <code>sku</code>, the product code, then I click the Value cell and type <code>DEMO-KB-001</code>. In the second row, I click the Key cell and type <code>name</code>, then the Value cell and type <code>Demo Keyboard</code>. In the third row, I type Key <code>unit_cost_cents</code>, the cost in cents, and Value <code>10000</code>. In the fourth row, Key <code>min_stock</code>, the minimum stock level, and Value <code>2</code> — both are required by this endpoint.</p></div><div class="block"><p class="label">SAY</p><p class="say">These are example values, not real customer data. The request is complete.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move to the blue Send button at the right end of the address row and click it once.</p></div><div class="block"><p class="label">SAY</p><p class="say">In the response panel at the bottom, the status at the top right shows 201 Created. Inside the <code>data</code> object, the <code>id</code> field is <code>[say the number]</code>. This is my product id, and I will use it for every movement. Now the product needs a place to live, so I will create the warehouse the same way.</p></div><p class="note">(pause, read, do not point with the mouse)</p></section>
+<section class="step" id="step-5" aria-labelledby="step-5-title"><header class="step-head"><p class="kicker">Step 5 <span class="badge">6:30-8:00</span></p><h2 id="step-5-title">Create warehouse and keep the IDs</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">For the warehouse, I click the plus sign beside the tabs to open a second request, set the method dropdown at the left of the address row to POST, and pick <code>http://127.0.0.1:8008/locations</code> from the suggestion list.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">Then I move down to the tabs below the address row, click <code>Body</code>, and choose <code>form-data</code> underneath.</p></div>
+<div class="block"><p class="label">CLICK</p><p class="say click">In the form-data table, I fill two rows: <code>code</code> with <code>DEMO-WH-001</code>, the warehouse code, and <code>address</code> with <code>Demo warehouse</code>.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move to the blue Send button at the right end of the address row and click it once.</p></div><div class="block"><p class="label">SAY</p><p class="say">Status 201. Inside <code>data</code>, the <code>id</code> is <code>[say the number]</code> — my warehouse id. I have both ids now, read from the responses rather than assumed. Before writing code, I want to see these records in the database, so DBeaver next.</p></div><section id="id-inputs" aria-labelledby="id-inputs-title" class="block"><h3 id="id-inputs-title">ID inputs</h3><div class="field"><label for="product-id">Product data.id</label><input type="text" id="product-id" inputmode="numeric" autocomplete="off" aria-describedby="product-error"><p class="field-error" id="product-error" role="alert"></p></div><div class="field"><label for="location-id">Location data.id</label><input type="text" id="location-id" inputmode="numeric" autocomplete="off" aria-describedby="location-error"><p class="field-error" id="location-error" role="alert"></p></div>
+<p class="hint">Only whole numbers of 1 or more, digits only, are accepted. The page does not save these values.</p></section></section>
+<section class="step" id="step-6" aria-labelledby="step-6-title"><header class="step-head"><p class="kicker">Step 6 <span class="badge">8:00-9:30</span></p><h2 id="step-6-title">Starting database</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">I move to the Dock on the right and click the fifth icon, DBeaver. It shows the database the API writes to — the connection is <code>db.sqlite</code>. I will check three tables: products, locations, and stock_movements.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move my cursor to the Database Navigator, the panel at the top left. I click the arrow next to <code>db.sqlite</code>, then the arrow next to <code>Tables</code>, to see the table list.</p></div><p class="note">(skip and say "already expanded" if so)</p><div class="block"><p class="label">CLICK</p><p class="say click">In the table list, I double-click <code>products</code> — it opens in the middle panel on the Data tab, where the saved rows are.</p></div><div class="block"><p class="label">SAY</p><p class="say">Here is the demo keyboard, with id <code>[number]</code>, the same as the Postman response. Next, the warehouse.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move my cursor back to the Navigator on the left and double-click <code>locations</code>.</p></div><div class="block"><p class="label">SAY</p><p class="say">Here is the demo warehouse with id <code>[number]</code>. It matches too. Last, the table my code will write to.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">Back in the Navigator, I double-click <code>stock_movements</code>.</p></div><div class="block"><p class="label">SAY</p><p class="say">It is empty. Creating a product does not create stock; stock only exists once a movement is recorded. So the starting point is clear: one product, one warehouse, zero movements. Now I will go back to Visual Studio Code and write the code that fills this table.</p></div></section>
+<section class="step" id="step-7" aria-labelledby="step-7-title"><header class="step-head"><p class="kicker">Step 7 <span class="badge">9:30-12:00</span></p><h2 id="step-7-title">Validation</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">I move to the Dock on the right and click the third icon from the top to return to Visual Studio Code.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I am moving my cursor to the row of file tabs at the top of the editor, and I click the <code>MovementController.php</code> tab to bring it forward.</p></div><div class="block"><p class="label">SAY</p><p class="say">I will build the helpers first, in the order <code>store</code> will call them, starting with input validation, because bad data should be rejected before anything else happens.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I am moving my cursor over the editor, and I scroll down with the mouse wheel to <code>validateMovement</code> on line <code>55</code>.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I click at the start of the placeholder line inside the method body, just below the signature, and drag to its end to select it, because I am replacing it with the real checks.</p></div><p class="note">TYPE (code below). Every 25 seconds: lift your hands, make a small circle with the mouse over the code, say one of the sentences below, continue.</p><div class="card"><div class="actions"><button type="button" class="copy" data-target="php-validate" data-label="validateMovement">Copy validateMovement</button><span class="feedback" role="status" aria-live="polite"></span></div><pre tabindex="0"><code id="php-validate">private function validateMovement(array $data)
+{
+    return validator($data, [
+        'product_id' =&gt; ['required', 'integer', 'exists:products,id'],
+        'location_id' =&gt; ['required', 'integer', 'exists:locations,id'],
+        'type' =&gt; ['required', 'string', Rule::in(StockMovement::TYPES)],
+        'qty' =&gt; ['required', 'integer', 'not_in:0'],
+        'note' =&gt; ['nullable', 'string'],
+    ])-&gt;validate();
+}</code></pre></div><div class="block"><p class="label">SAY WHILE TYPING (move the mouse)</p><ul class="say"><li>The product id is required, must be a whole number, and must exist in the products table.</li><li>The warehouse id follows the same rule against the locations table.</li><li>The type must be one of the model's types. I reuse the model list so I do not maintain it twice.</li><li>The quantity must be a whole number and cannot be zero. A movement of zero changes nothing.</li><li>The note is optional. If one is sent, it must be text.</li></ul></div><div class="block"><p class="label">SAY</p><p class="say">The input check is done. A valid request can still carry the wrong sign, so the next helper fixes that.</p></div></section>
+<section class="step" id="step-8" aria-labelledby="step-8-title"><header class="step-head"><p class="kicker">Step 8 <span class="badge">12:00-13:30</span></p><h2 id="step-8-title">Signs</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">Staying in the editor, I scroll down with the mouse wheel to <code>normalizeQtyByType</code> on line <code>80</code>.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I click at the start of the placeholder line inside the method body and drag to its end to select it, so I can replace it.</p></div><div class="card"><div class="actions"><button type="button" class="copy" data-target="php-normalize" data-label="normalizeQtyByType">Copy normalizeQtyByType</button><span class="feedback" role="status" aria-live="polite"></span></div><pre tabindex="0"><code id="php-normalize">private function normalizeQtyByType(string $type, int $qty): int
+{
+    return match ($type) {
+        'IN' =&gt; abs($qty),
+        'OUT' =&gt; -abs($qty),
+        default =&gt; $qty,
+    };
+}</code></pre></div><div class="block"><p class="label">SAY WHILE TYPING (move the mouse)</p><ul class="say"><li>For IN, I keep the positive amount using abs.</li><li>For OUT, I take the positive amount and put a minus in front. Shipping four is always saved as minus four, whether the caller sends four or minus four.</li><li>ADJUST is a correction, so I keep whatever sign was sent.</li></ul></div><div class="block"><p class="label">SAY</p><p class="say">Now every outgoing quantity is stored as negative, which is exactly what <code>stockOnHand</code> expects. With the sign correct, I can check whether a shipment would take the stock below zero. That is the third helper.</p></div></section>
+<section class="step" id="step-9" aria-labelledby="step-9-title"><header class="step-head"><p class="kicker">Step 9 <span class="badge">13:30-15:00</span></p><h2 id="step-9-title">Stock check</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">Staying in the editor, I scroll back up with the mouse wheel to <code>hasSufficientStockForOut</code> on line <code>68</code>.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I click at the start of the placeholder line inside the method body and drag to its end to select it.</p></div><div class="card"><div class="actions"><button type="button" class="copy" data-target="php-stock" data-label="hasSufficientStockForOut">Copy hasSufficientStockForOut</button><span class="feedback" role="status" aria-live="polite"></span></div><pre tabindex="0"><code id="php-stock">private function hasSufficientStockForOut(int $productId, int $locationId, int $qty): array
+{
+    $stock = StockMovement::stockOnHand($productId, $locationId);
+
+    return [
+        'ok' =&gt; $stock + $qty &gt;= 0,
+        'stock' =&gt; $stock,
+    ];
+}</code></pre></div><div class="block"><p class="label">SAY WHILE TYPING (move the mouse)</p><ul class="say"><li>First I ask the model for the current stock of this product in this warehouse.</li><li>Then I add the outgoing quantity, which is already negative. Six plus minus seven is minus one. That is rejected.</li><li>Zero is allowed. Shipping all six of six leaves an empty warehouse, and that is valid.</li><li>I also return the current stock so a rejected request can explain itself.</li></ul></div><div class="block"><p class="label">SAY</p><p class="say">The three helpers are ready: validate, set the sign, check the stock. Now I connect them in <code>store</code>, which is back at the top of the class.</p></div></section>
+<section class="step" id="step-10" aria-labelledby="step-10-title"><header class="step-head"><p class="kicker">Step 10 <span class="badge">15:00-19:30</span></p><h2 id="step-10-title">Store</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">Staying in the editor, I scroll up with the mouse wheel to the <code>store</code> method on line <code>44</code>.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I click at the start of the line containing the 501 return, and I drag to the end of that statement to select the whole placeholder, because I am replacing it with the full method.</p></div><div class="card"><div class="actions"><button type="button" class="copy" data-target="php-store" data-label="store">Copy store</button><span class="feedback" role="status" aria-live="polite"></span></div><pre tabindex="0"><code id="php-store">public function store()
+{
+    $data = request()-&gt;only(self::FIELDS);
+    $validated = $this-&gt;validateMovement($data);
+    $validated['qty'] = $this-&gt;normalizeQtyByType($validated['type'], $validated['qty']);
+
+    return DB::transaction(function () use ($validated) {
+        if ($validated['type'] === 'OUT') {
+            $result = $this-&gt;hasSufficientStockForOut(
+                $validated['product_id'],
+                $validated['location_id'],
+                $validated['qty']
+            );
+
+            if (!$result['ok']) {
+                return response()-&gt;json([
+                    'message' =&gt; 'Insufficient stock',
+                    'current_stock' =&gt; $result['stock'],
+                    'requested_out' =&gt; abs($validated['qty']),
+                ], 422);
+            }
+        }
+
+        $movement = StockMovement::create($validated);
+
+        return response()-&gt;json([
+            'message' =&gt; 'Movement added successfully',
+            'data' =&gt; $movement,
+            'current_stock' =&gt; StockMovement::stockOnHand(
+                $validated['product_id'],
+                $validated['location_id']
+            ),
+        ], 201);
+    });
+}</code></pre></div><div class="block"><p class="label">SAY WHILE TYPING (move the mouse)</p><ul class="say"><li>I read only the fields this endpoint accepts.</li><li>I run the input check, then I fix the sign. The sign is fixed before the stock check, so the stock check always sees a negative outgoing number.</li><li>The database work runs inside a transaction, so if a database error happens halfway, the changes roll back.</li><li>For OUT only, I call the stock check. If it fails, I return 422 with the available amount and the requested amount. This return happens before the save, so a rejected movement never reaches the database.</li><li>If the checks pass, I save the movement.</li><li>Then I compute the stock again, including the new row, and return both the row and the new balance with status 201, because a record was created.</li></ul></div><div class="block"><p class="label">CLICK</p><p class="say click">I scroll up and down once with the mouse wheel to check the braces line up.</p></div><div class="block"><p class="label">SAY</p><p class="say">I press Command S on my keyboard to save the file so the API picks up the change.</p></div><div class="block"><p class="label">SAY</p><p class="say">The endpoint is written, but code I have not run is only a promise. I will go back to Postman and send real movements, starting with a delivery.</p></div></section>
+<section class="step" id="step-11" aria-labelledby="step-11-title"><header class="step-head"><p class="kicker">Step 11 <span class="badge">19:30-21:00</span></p><h2 id="step-11-title">IN 10 delivery</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">I move to the Dock on the right and click the fourth icon from the top to return to Postman. I open a new request with the plus sign beside the tabs, set the method dropdown at the left of the address row to POST, and pick <code>http://127.0.0.1:8008/movements</code> from the URL suggestions. Then I move down to the tabs below the address row, click <code>Body</code>, and choose <code>form-data</code> underneath.</p></div>
+
+
+
+<div class="block"><p class="label">CLICK</p><p class="say click">In the form-data table, I fill the four rows: <code>product_id</code> with <code>[product id]</code> and <code>location_id</code> with <code>[warehouse id]</code>, both read from the earlier responses; then <code>type</code> with <code>IN</code>, because stock is arriving, and <code>qty</code> with <code>10</code>.</p></div><div class="block"><p class="label">SAY</p><p class="say">Ten units arriving at an empty warehouse. I expect status 201, a saved quantity of ten, and a current stock of ten.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move to the blue Send button at the right end of the address row and click it once.</p></div><div class="block"><p class="label">SAY</p><p class="say">The status is 201. In <code>data</code>, <code>qty</code> is 10, and <code>current_stock</code> is 10. The delivery works. Now that there is stock, I can test taking some out.</p></div><p class="note">(read, don't point)</p></section>
+<section class="step" id="step-12" aria-labelledby="step-12-title"><header class="step-head"><p class="kicker">Step 12 <span class="badge">21:00-22:30</span></p><h2 id="step-12-title">OUT 4 shipment</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">I stay in the same request and change two values. In the form-data table in the Body tab, I double-click the value <code>IN</code> in the type row to select it and type <code>OUT</code>, because stock is leaving — then I double-click the value <code>10</code> in the qty row and type <code>4</code>.</p></div>
+
+
+
+<div class="block"><p class="label">SAY</p><p class="say">Four out of ten. I expect 201, a saved quantity of minus four, and six remaining.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move to the blue Send button at the right end of the address row and click it once.</p></div><div class="block"><p class="label">SAY</p><p class="say">Status 201. <code>qty</code> is minus 4 and <code>current_stock</code> is 6 — I sent four and the endpoint stored minus four, the sign rule working. I will check the saved rows once, at the end. Now I will try a shipment that should be refused.</p></div></section>
+<section class="step" id="step-13" aria-labelledby="step-13-title"><header class="step-head"><p class="kicker">Step 13 <span class="badge">22:30-24:00</span></p><h2 id="step-13-title">OUT 7 rejection</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">Only six units remain, so I will ask for seven. I am moving my cursor to the form-data table in the Body tab, and I double-click the value <code>4</code> in the qty row to select it, and I type <code>7</code> with my keyboard.</p></div>
+
+
+
+<div class="block"><p class="label">SAY</p><p class="say">I expect status 422, the message Insufficient stock, current stock six, and requested seven.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move to the blue Send button at the right end of the address row and click it once.</p></div><div class="block"><p class="label">SAY</p><p class="say">Status 422. The message is Insufficient stock, <code>current_stock</code> is 6 and <code>requested_out</code> is 7. The error explains itself — and whether it saved anything is exactly what the final table check will prove. Next, the boundary: shipping exactly what is left.</p></div></section>
+<section class="step" id="step-14" aria-labelledby="step-14-title"><header class="step-head"><p class="kicker">Step 14 <span class="badge">24:00-25:30</span></p><h2 id="step-14-title">OUT 6 exact depletion</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">I am moving my cursor to the form-data table in the Body tab, and I double-click the value <code>7</code> in the qty row to select it, and I type <code>6</code> with my keyboard, which is exactly the remaining stock.</p></div>
+
+
+
+<div class="block"><p class="label">SAY</p><p class="say">I expect 201, minus six saved, and zero remaining. Zero is allowed; only a negative balance is refused.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move to the blue Send button at the right end of the address row and click it once.</p></div><div class="block"><p class="label">SAY</p><p class="say">Status 201. <code>qty</code> is minus 6 and <code>current_stock</code> is 0. The stock rule is covered. My last test is the input rule, with an invalid quantity.</p></div></section>
+<section class="step" id="step-15" aria-labelledby="step-15-title"><header class="step-head"><p class="kicker">Step 15 <span class="badge">25:30-27:00</span></p><h2 id="step-15-title">IN 0 validation</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">In the form-data table in the Body tab, I double-click the value <code>OUT</code> in the type row to select it and type <code>IN</code>, so this test hits the quantity rule and not the stock rule. Then I double-click the value <code>6</code> in the qty row and type <code>0</code>.</p></div>
+
+
+
+<div class="block"><p class="label">SAY</p><p class="say">A movement of zero changes nothing, so validation should refuse it. I expect a 422 validation error about the quantity, and no new row.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move to the blue Send button at the right end of the address row and click it once.</p></div><div class="block"><p class="label">SAY</p><p class="say">Status 422. The error says the quantity is not allowed — the request never reached the save. That is all five requests done. Now I will check the database once, at the end.</p></div></section>
+<section class="step" id="step-16" aria-labelledby="step-16-title"><header class="step-head"><p class="kicker">Step 16 <span class="badge">27:00-29:00</span></p><h2 id="step-16-title">Check the database and close</h2></header><div class="block"><p class="label">CLICK</p><p class="say click">I move to the Dock on the right and click the fifth icon, DBeaver.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move my cursor to the middle panel and click the <code>stock_movements</code> tab, still open from earlier. Then I move down to the Refresh button at the bottom left, below the grid, and click it.</p></div><div class="block"><p class="label">SAY</p><p class="say">I sent five requests, and exactly three rows exist: plus ten, minus four, minus six — a sum of zero. The rejected shipment saved no row, and the invalid quantity saved no row. The database matches every response the API returned.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I move to the Dock on the right and click the third icon from the top to return to Visual Studio Code.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I am moving my cursor to the file tabs at the top of the editor, and I click the <code>MovementController.php</code> tab.</p></div><div class="block"><p class="label">CLICK</p><p class="say click">I scroll slowly with the mouse wheel from the top of <code>store</code> down to the end of <code>hasSufficientStockForOut</code>, so the four finished methods are visible.</p></div><div class="block"><p class="label">SAY</p><p class="say">The movement endpoint is complete. <code>validateMovement</code> checks the input, <code>normalizeQtyByType</code> sets the sign, <code>hasSufficientStockForOut</code> checks the stock, and <code>store</code> connects them and saves inside a transaction. I verified a delivery, a shipment, a refused over-shipment, an exact depletion, and an invalid quantity, and the database matched every response. The Dock stays visible. I will stop the recording now.</p></div></section>
+<details class="if-wrong"><summary>If something goes wrong</summary><div class="block"><p class="label">SAY</p><p class="say">This is not the result I expected. I will read the error and check the related code.</p><p class="say">The response points to this field. I will compare it with the request I sent.</p><p class="say">This result may be old. I will refresh the table again before drawing a conclusion.</p></div></details>
+<section id="expected" aria-labelledby="expected-title"><h2 id="expected-title">Expected results summary</h2><details class="expected-table"><summary>Expected results table and technical GET note</summary><div class="table-wrap" tabindex="0" role="region" aria-label="Expected results table, scrollable"><table><thead><tr><th scope="col">Request</th><th scope="col">HTTP</th><th scope="col">Database movement count</th><th scope="col">Database stock</th></tr></thead><tbody><tr><th scope="row">IN10</th><td>201</td><td>1</td><td>10</td></tr><tr><th scope="row">OUT4</th><td>201</td><td>2</td><td>6</td></tr><tr><th scope="row">OUT7</th><td>422</td><td>2</td><td>6</td></tr><tr><th scope="row">OUT6</th><td>201</td><td>3</td><td>0</td></tr><tr><th scope="row">IN0</th><td>422</td><td>3</td><td>0</td></tr></tbody></table></div><p>These are the expected values for the demo product and warehouse pair in the order shown. Rejected requests (OUT7 and IN0) save no row, so their counts stay the same. The table assumes the requests run in this order on a fresh demo product and location.</p><p>The existing GET /movements endpoint shows absolute quantities for IN and OUT. Use the POST response and the database for signed values.</p></details></section>
+</main>
+
+<script>
+  function parsePositiveId(raw) {
+    if (!/^[0-9]+$/.test(raw)) return null;
+    var n = Number(raw);
+    return Number.isSafeInteger(n) && n > 0 ? n : null;
+  }
+
+
+
+  function checkField(inputId, errorId) {
+    var input = document.getElementById(inputId);
+    var error = document.getElementById(errorId);
+    var raw = input.value;
+    var valid = parsePositiveId(raw) !== null;
+    error.textContent = valid || raw === '' ? '' : 'Enter a whole number of 1 or more, using digits only.';
+    input.setAttribute('aria-invalid', valid ? 'false' : 'true');
+    return valid;
+  }
+
+  function updateAll() {
+    checkField('product-id', 'product-error');
+    checkField('location-id', 'location-error');
+  }
+
+  function setFeedback(el, message, kind) {
+    el.textContent = message;
+    el.className = 'feedback' + (kind ? ' ' + kind : '');
+  }
+
+  function selectNode(el) {
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  async function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {
+        // fall back to execCommand below
+      }
+    }
+    var previousFocus = document.activeElement;
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    ta.style.top = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try {
+      ok = document.execCommand('copy') === true;
+    } catch (e) {
+      ok = false;
+    } finally {
+      document.body.removeChild(ta);
+      if (previousFocus && previousFocus.focus) previousFocus.focus();
+    }
+    return ok;
+  }
+
+  async function handleCopy(btn) {
+    var card = btn.closest('.card');
+    var feedback = card.querySelector('.feedback');
+    var label = btn.dataset.label;
+    var text;
+    var target;
+    target = document.getElementById(btn.dataset.target);
+    text = target.textContent;
+    var ok = await copyText(text);
+    if (ok) {
+      setFeedback(feedback, 'Copied ' + label + '.', 'ok');
+    } else {
+      selectNode(target);
+      setFeedback(feedback, 'Copy did not work in this browser. The text is selected: press Cmd+C on Mac or Ctrl+C on Windows.', 'err');
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('button.copy');
+    if (btn && !btn.disabled) handleCopy(btn);
+  });
+  document.getElementById('product-id').addEventListener('input', updateAll);
+  document.getElementById('location-id').addEventListener('input', updateAll);
+  updateAll();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('read-mode-toggle');
+    function apply(on) {
+      document.body.classList.toggle('read-mode', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.textContent = on ? 'Switch to full view' : 'Switch to reading view';
+    }
+    btn.addEventListener('click', function () {
+      apply(!document.body.classList.contains('read-mode'));
+    });
+  })();
+</script>
+</body>
+</html>

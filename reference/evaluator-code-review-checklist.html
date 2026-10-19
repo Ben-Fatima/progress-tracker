@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reference – Evaluator code-review checklist</title>
+  <link rel="stylesheet" href="../assets/lesson-style.css">
+  <style>
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+    th, td { border: 1px solid var(--border-subtle); padding: 0.5rem 0.7rem; text-align: left; vertical-align: top; }
+    th { background: var(--surface-soft); }
+  </style>
+</head>
+<body>
+<main>
+  <header class="lesson-header">
+    <p class="lesson-id">Reference</p>
+    <h1>Evaluator code-review checklist</h1>
+    <p class="lesson-tagline">Compressed from <a href="../lessons/0002-structured-code-review-ai-evaluators.html">Lesson 0002</a>. Re-read the morning of any AI-eval assessment.</p>
+  </header>
+
+  <section>
+    <h2>The four lenses (in priority order)</h2>
+    <table>
+      <tr><th>Lens</th><th>Hunt for</th><th>Common planted bugs</th></tr>
+      <tr><td><strong>1. Correctness</strong></td><td>Wrong output for some/all inputs</td><td>Off-by-one, un-awaited Promise, null/empty edge cases, wrong operator, swallowed errors</td></tr>
+      <tr><td><strong>2. Security</strong></td><td>Input reaching a dangerous sink</td><td>SQL/HTML interpolation, unvalidated input, exposed secrets</td></tr>
+      <tr><td><strong>3. Performance</strong></td><td>Work scaling badly with input</td><td>Query/network call in a loop (N+1), repeated computation, needless O(n²)</td></tr>
+      <tr><td><strong>4. Readability</strong></td><td>Maintainability issues</td><td>Loose equality, misleading names, dead code. <em>Never lead with this.</em></td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>The finding format</h2>
+    <div class="callout">
+      <p><strong>Finding → Evidence → Fix</strong></p>
+      <p><em>"Line N: [what's wrong] — [mechanism that proves it / concrete consequence]. Fix: [correction]."</em></p>
+    </div>
+    <ul>
+      <li>Cite the <strong>line</strong>. Name the <strong>mechanism</strong>. Give the <strong>fix</strong>.</li>
+      <li>"Silently returns <code>[]</code> for every input" beats "doesn't work."</li>
+      <li>Severity order in your written review: correctness &gt; security &gt; performance &gt; style.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rubric lines (Task Author)</h2>
+    <p>Test every criterion: <strong>could a plausible-but-wrong solution still pass it?</strong></p>
+    <ul>
+      <li>❌ Vague: "code is efficient" / "handles errors well"</li>
+      <li>✅ Checkable: "makes exactly one DB query for any input size" / "all user input reaches SQL via bound parameters" / "returns [x] for input [y]"</li>
+      <li>A good criterion names: the <strong>observable behavior</strong>, the <strong>input variation</strong>, and the <strong>required output</strong>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Assessment-day rules</h2>
+    <ul>
+      <li>Write in complete, plain-English sentences — your writing <em>is</em> the work sample.</li>
+      <li>Rank/compare solutions with justification, not vibes.</li>
+      <li>If asked to review a task prompt: check rubric checkability, reproducibility, and whether a wrong-but-plausible fix could score full marks.</li>
+      <li>Primary source: <a href="https://google.github.io/eng-practices/review/reviewer/" target="_blank" rel="noopener">Google Eng Practices — code review</a>.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

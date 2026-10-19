@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lesson 0004 – micro1 Junior SWE: the evaluator interview</title>
+  <link rel="stylesheet" href="../assets/lesson-style.css">
+</head>
+<body>
+<main>
+  <header class="lesson-header">
+    <p class="lesson-id">Lesson 0004</p>
+    <h1>micro1 Junior SWE: the evaluator interview</h1>
+    <p class="lesson-tagline">Combine the code-review skill (Lesson 0002) with the spoken-interview format (Lesson 0003) — plus two new skills: judging plausible-but-wrong AI code, and writing testable problems.</p>
+  </header>
+
+  <section id="mission">
+    <h2>How this fits your mission</h2>
+    <p>You were sourced by micro1's AI recruiter for a <strong>Junior Software Engineer</strong> contract: <strong>$150–200/hr</strong> — the highest rate on your AI-platforms track by a wide margin. The work: evaluate AI-generated code, write engineering problems with reference solutions and test cases, review model reasoning on architecture and debugging.</p>
+    <p>Pipeline: apply → <strong>AI-conducted interview</strong> (micro1's is typically called Zara) → matching to a client project. One caveat from the listing: "based in an English-speaking country" is a preferred qualification — you're applying anyway and letting their filter decide. It costs nothing to try.</p>
+  </section>
+
+  <section id="what-graded">
+    <h2>What this interview is actually grading</h2>
+    <ul>
+      <li><strong>Technical judgment aloud</strong> — can you evaluate code while narrating why?</li>
+      <li><strong>Reasoning quality</strong> — architecture and debugging questions score your <em>process</em>: requirements → options → tradeoffs → decision.</li>
+      <li><strong>Written clarity</strong> — the job's deliverable is precise written feedback; your interview answers are a live sample.</li>
+      <li><strong>Real engineering credentials</strong> — they want experience stories, not adjectives.</li>
+    </ul>
+    <div class="callout">
+      <p><strong>New skill to demonstrate:</strong> AI-generated code fails differently than human code. It is usually clean, idiomatic, well-named — and wrong in ways that pass the happy path. Your job in this interview is to show you hunt for <em>plausible-but-wrong</em>, not messy-but-right.</p>
+    </div>
+  </section>
+
+  <section id="knowledge">
+    <h2>The evaluator's additions to your toolkit (5 minutes)</h2>
+
+    <h3>Skill 1 — The plausible-but-wrong hunt</h3>
+    <p>On top of the four lenses from Lesson 0002 (correctness → security → performance → readability), add the AI-specific check:</p>
+    <ol class="steps">
+      <li><strong>Run it mentally on hostile inputs</strong> — empty, null, single element, maximum, malformed. AI code is optimized to look right on the example given in the prompt.</li>
+      <li><strong>Check the reasoning, not just the output</strong> — a correct answer reached by wrong reasoning still needs flagging. It means the model got lucky and will fail the next variation.</li>
+      <li><strong>Check spec compliance</strong> — fluent code that solves an <em>adjacent</em> problem is the most common AI failure. Re-read what was actually asked.</li>
+    </ol>
+
+    <h3>Skill 2 — What makes a good problem + test suite</h3>
+    <p>This role pays you to <em>author</em> problems, not just solve them. A good evaluation problem:</p>
+    <ul>
+      <li><strong>Unambiguous spec</strong> — inputs, outputs, edge-case behavior all defined. If two experts could disagree on the correct answer, the problem is broken.</li>
+      <li><strong>A separating trap</strong> — one subtlety that divides strong solutions from weak ones (ordering, a boundary, a subtle invariant).</li>
+      <li><strong>Checkable tests</strong> — happy path, edge cases, and at least one case that a plausible-but-wrong solution fails.</li>
+    </ul>
+
+    <h3>Skill 3 — Reviewing model reasoning</h3>
+    <p>When reviewing a model's explanation of architecture or debugging, ask: <em>does each step of reasoning actually support the conclusion?</em> Conclusion-right/reasoning-wrong is a flag. Reasoning that skips justification ("obviously", "simply") is a flag.</p>
+  </section>
+
+  <section id="exercise-1">
+    <h2>Exercise 1 — The plausible-but-wrong hunt</h2>
+    <div class="exercise">
+      <p class="exercise-title">An AI was asked: <em>"Write a function that returns true if a string's brackets are balanced — (), [], {}."</em> Its solution looks clean. <strong>Find what it gets wrong</strong> — write findings in Finding → Evidence → Fix before revealing.</p>
+
+<pre><code>function isBalanced(str) {
+  const counts = { '(': 0, '[': 0, '{': 0 };
+  const pairs = { ')': '(', ']': '[', '}': '{' };
+
+  for (const ch of str) {
+    if (ch in counts) counts[ch]++;
+    else if (ch in pairs) counts[pairs[ch]]--;
+  }
+  return Object.values(counts).every(c => c === 0);
+}</code></pre>
+
+      <p>Trace it on <code>"([)]"</code> before revealing anything.</p>
+
+      <details>
+        <summary>Finding 1 — Correctness (the trap)</summary>
+        <p><em>"The function counts brackets instead of checking their order. Input <code>"([)]"</code> returns <code>true</code> — every open has a matching close — but the brackets are interleaved, not balanced. Any input where closers appear out of nesting order (<code>"{[(])}"</code>, <code>")("</code> where the count dips negative then recovers... it also misses mid-string negatives like <code>")("</code> which nets to zero) passes incorrectly. Fix: use a stack — push openers, on each closer pop and verify it matches."</em></p>
+        <p><strong>This is the textbook plausible-but-wrong failure:</strong> clean code, passes <code>"()"</code>, <code>"{[]}"</code>, <code>"(()())"</code> — fails the one case that matters.</p>
+      </details>
+      <details>
+        <summary>Finding 2 — Spec ambiguity to flag</summary>
+        <p><em>"The spec doesn't say how to treat non-bracket characters. This solution silently ignores them — <code>"a(b)c"</code> works by accident. Is that intended? A good evaluator flags the ambiguity in the problem statement itself, not just the code."</em></p>
+      </details>
+      <details>
+        <summary>Finding 3 — Subtle correctness</summary>
+        <p><em>"<code>")("</code> returns true — the count goes negative then back to zero, and only the final count is checked. Order matters at every step, not just at the end. The stack fix covers this too."</em></p>
+      </details>
+
+      <p><strong>Self-score:</strong> Finding 1 is the must-catch — if you found the ordering bug plus one more, you're at evaluator level. If the code looked fine to you on first read, that is exactly what this exercise exists to fix.</p>
+    </div>
+  </section>
+
+  <section id="exercise-2">
+    <h2>Exercise 2 — Write the test cases that catch it</h2>
+    <div class="exercise">
+      <p class="exercise-title">Author skill: write a test suite for the bracket problem that a plausible-but-wrong solution cannot pass. List your cases before revealing.</p>
+      <details>
+        <summary>Model test suite</summary>
+        <ul>
+          <li><code>"{[]}"</code> → true — happy path, nested</li>
+          <li><code>"([)]"</code> → false — <strong>the killer case:</strong> balanced counts, wrong order. Filters out every counting-based solution.</li>
+          <li><code>")("</code> → false — wrong order at the start, nets to zero</li>
+          <li><code>"("</code> → false — unmatched opener</li>
+          <li><code>""</code> → true or spec'd — edge case; a good suite forces the spec to answer this</li>
+          <li><code>"a(b)c"</code> → per spec — forces the non-bracket question to be resolved</li>
+        </ul>
+        <p>The pattern: happy path, the separating trap, two edge cases, and every ambiguity in the spec converted into a test. That last part is the Task Author instinct — <em>if the spec is silent, the test suite is where you notice.</em></p>
+      </details>
+    </div>
+  </section>
+
+  <section id="mock">
+    <h2>The mock — likely questions, run out loud</h2>
+    <p>Same rules as Lesson 0003: answer aloud first, then compare. 15-minute timer.</p>
+
+    <h3>Round 1 — Background (reuse, don't reinvent)</h3>
+    <div class="exercise">
+      <p class="exercise-title">Q1. "Walk me through your background and experience."</p>
+      <details>
+        <summary>Model answer</summary>
+        <p><em>"I'm a software engineer with about three years of professional experience — CPGE preparatory classes, then ENSIAS, Morocco's national engineering school for computer science. Day to day I build backend systems in PHP/Laravel and JavaScript, and I ship my own projects on the side — a productivity platform and a content marketplace I designed end to end, including rate limiting and stateless architecture decisions. Code review is a daily part of my work, and this role is essentially doing it at a higher standard — evaluating AI output and explaining precisely what's wrong."</em></p>
+        <p>Same arc as Lesson 0003, re-angled: the last sentence connects your experience to <em>this</em> role's actual work.</p>
+      </details>
+    </div>
+
+    <h3>Round 2 — Technical judgment (the differentiator)</h3>
+    <div class="exercise">
+      <p class="exercise-title">Q2. "How do you evaluate whether AI-generated code is good?"</p>
+      <details>
+        <summary>Model answer</summary>
+        <p><em>"Four lenses, in order: correctness, security, performance, readability. But AI code needs a fifth instinct — it fails plausibly. It looks clean and passes the obvious example, so I run it mentally on hostile inputs: empty, null, boundary, out-of-order. I also check whether it solved the problem that was actually specified, not an adjacent one. And when the answer is right but the reasoning is wrong, I still flag it — a lucky model fails on the next variation."</em></p>
+      </details>
+
+      <p class="exercise-title">Q3. "Describe a technically challenging problem you solved."</p>
+      <p>STAR format. Your stock tracker's event sourcing is the strongest story — real architectural decision, real tradeoffs.</p>
+      <details>
+        <summary>Model answer (your real project)</summary>
+        <p><em>"In a stock-tracking app I built, I needed inventory state that could survive audits and corrections. Instead of mutating a stock count, I modeled it as an append-only event log — every adjustment is an event, and current stock is derived by folding them. That made corrections a new event rather than a destructive update, so the history stays intact and auditable. The tradeoff was query cost — deriving state is more expensive than reading a column — which I handled by [snapshotting / accepting the cost at this scale]. It taught me that the 'correct' model is the one whose failure modes you can live with."</em></p>
+        <p>Why it works: real decision, explicit tradeoff, and a reflective close. Evaluators hire people who see tradeoffs, not people who claim there are none.</p>
+      </details>
+
+      <p class="exercise-title">Q4. "How would you design a coding problem to test whether a model truly understands X?"</p>
+      <details>
+        <summary>Model answer</summary>
+        <p><em>"I'd write a spec that's unambiguous on inputs, outputs, and edges — then build one separating trap into it: a subtlety where the obvious approach is wrong, like counting instead of ordering in a bracket-matcher. Then the test suite does the real work: a happy path, boundary cases, and at least one case that a plausible-but-wrong solution fails. If my tests can't distinguish a correct solution from a convincing wrong one, the problem isn't finished."</em></p>
+      </details>
+
+      <p class="exercise-title">Q5. Design reasoning — "How would you design a URL shortener / rate limiter / simple cache?"</p>
+      <p>60–90 seconds, structured. They're scoring shape, not completeness.</p>
+      <details>
+        <summary>The shape to use every time</summary>
+        <p><em>"Requirements first: what's the read/write pattern, what scale, what consistency do we need? Then components: for a rate limiter — a counter store like Redis, a windowing strategy — fixed window is simple, sliding window is fairer. Then the tradeoffs: fixed window can burst at boundaries; sliding costs more memory. Then a decision with a reason: I'd take fixed window for v1 because correctness under concurrency matters more than burst fairness at this scale."</em></p>
+        <p>Requirements → components → tradeoffs → decided-with-reason. Never jump to components first.</p>
+      </details>
+    </div>
+
+    <h3>Round 3 — Logistics (don't fumble)</h3>
+    <div class="exercise">
+      <p class="exercise-title">Q6. Hours, start date, English proficiency.</p>
+      <details>
+        <summary>Model answer</summary>
+        <p><em>"I can commit [realistic number] hours per week, evenings and weekends, starting immediately. I work in English daily — code review, documentation, and my projects are all written in English."</em></p>
+        <p>On the "English-speaking country" preference: don't apologize or volunteer doubt. If asked directly, answer honestly and move on — your written English is the evidence either way.</p>
+      </details>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <h2>Checkpoint — which evaluation answer is strongest?</h2>
+    <div class="quiz"
+         data-correct-feedback="Correct — it names the AI-specific failure mode (plausible-but-wrong) and the method for catching it. The others describe generic code review."
+         data-incorrect-feedback="Look again: the strongest answer names how AI code fails specifically — clean-looking but wrong on edge cases — and gives a method for catching it.">
+      <p class="quiz-question">"How is reviewing AI-generated code different from reviewing a junior colleague's code?"</p>
+      <button class="quiz-option" data-correct="false">"It's the same process — I check for bugs, style issues, and whether it does what was asked."</button>
+      <button class="quiz-option" data-correct="false">"AI code is usually worse, so I expect more bugs and review more carefully."</button>
+      <button class="quiz-option" data-correct="true">"AI code fails differently — it's clean and idiomatic but wrong on edge cases and ordering, so I run it mentally on hostile inputs instead of trusting how it looks."</button>
+      <p class="quiz-feedback" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section id="scorecard">
+    <h2>Self-score after the mock</h2>
+    <ul>
+      <li>⬜ Found the ordering bug in Exercise 1 before revealing?</li>
+      <li>⬜ Test suite included at least one plausible-but-wrong killer case?</li>
+      <li>⬜ Technical answers narrated process, not just conclusions?</li>
+      <li>⬜ Design answer used requirements → components → tradeoffs → decision?</li>
+      <li>⬜ Spoke out loud without long stalls?</li>
+    </ul>
+    <p><strong>4–5:</strong> apply today. <strong>≤3:</strong> rerun the weak spots — this role is worth an extra rehearsal, the rate is triple your other platforms.</p>
+  </section>
+
+  <section id="retrieval">
+    <h2>Quick self-check (retrieval)</h2>
+    <ol>
+      <li>What is the defining failure mode of AI-generated code?</li>
+      <li>What are the three AI-specific checks on top of the four lenses?</li>
+      <li>What three things make a good evaluation problem?</li>
+      <li>When is a right answer still a flag in model reasoning review?</li>
+      <li>What is the four-step shape for a design question?</li>
+    </ol>
+  </section>
+
+  <section id="reference-link">
+    <h2>Keep for later</h2>
+    <p>Refresh the four lenses and Finding → Evidence → Fix before the interview: <a href="../reference/evaluator-code-review-checklist.html">Evaluator code-review checklist</a>. Interview format warm-up: <a href="0003-mercor-ai-interview-mock.html">Lesson 0003</a>.</p>
+  </section>
+
+  <footer class="lesson-footer">
+    <p><strong>Next step:</strong> apply through the email link, run this mock once out loud, take the AI interview. Then log the actual questions — micro1's interview feeds the same question bank as Mercor's.</p>
+    <p>Want a live mock? Ask in our chat ("run the micro1 mock, Lesson 0004") — I'll fire questions and grade answers like the interviewer would.</p>
+  </footer>
+</main>
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

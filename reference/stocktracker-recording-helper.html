@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference - Inventory API recording preparation helper</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --surface: #ffffff;
+      --surface-soft: #f1f4f8;
+      --text: #1c2430;
+      --muted: #5b6674;
+      --border: #cfd6e0;
+      --border-subtle: #e2e7ee;
+      --accent: #1f5fbf;
+      --on-accent: #ffffff;
+      --accent-soft: #e7f0fc;
+      --warn-bg: #fff4e0;
+      --warn-border: #d08a1e;
+      --ok: #1d7a3f;
+      --err: #b3261e;
+      --focus: #1f5fbf;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14181f;
+        --surface: #1c222c;
+        --surface-soft: #232b37;
+        --text: #e6ebf2;
+        --muted: #a3adba;
+        --border: #3a4454;
+        --border-subtle: #2d3642;
+        --accent: #7fb2ff;
+        --on-accent: #0b1220;
+        --accent-soft: #1d2b40;
+        --warn-bg: #3a2d12;
+        --warn-border: #c98a1e;
+        --ok: #6fd08c;
+        --err: #ff8a80;
+        --focus: #7fb2ff;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.55;
+    }
+    main { max-width: 1000px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+    h1 { font-size: 1.6rem; margin: 0.2rem 0 0.6rem; }
+    h2 { font-size: 1.25rem; margin: 2rem 0 0.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.3rem; }
+    h3 { font-size: 1.05rem; margin: 0 0 0.4rem; }
+    a { color: var(--accent); }
+    code, pre { font-family: ui-monospace, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.86rem; }
+    pre {
+      background: var(--surface-soft);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .kicker { margin: 0; color: var(--muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+    }
+    .callout p { margin: 0.3rem 0; }
+    .callout.warn { border-left-color: var(--warn-border); background: var(--warn-bg); }
+    nav ul { list-style: none; padding: 0; margin: 0.5rem 0 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; }
+    .hint { margin: 0.2rem 0 0.5rem; color: var(--text); }
+    .hint strong { color: var(--muted); font-weight: 600; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; align-items: center; margin: 0.4rem 0; }
+    .feedback { font-size: 0.92rem; color: var(--muted); min-height: 1.3em; }
+    .feedback.ok { color: var(--ok); }
+    .feedback.err { color: var(--err); }
+    .note { color: var(--muted); font-size: 0.94rem; }
+    button {
+      font: inherit;
+      padding: 0.45rem 0.9rem;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: var(--on-accent);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:focus-visible, input:focus-visible, pre:focus-visible, a:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+    label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+    input[type="text"] {
+      font: inherit;
+      width: 12rem;
+      max-width: 100%;
+      padding: 0.4rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .field { margin: 0.5rem 1.5rem 0.5rem 0; display: inline-block; vertical-align: top; }
+    .field-error { color: var(--err); font-size: 0.92rem; min-height: 1.2em; margin: 0.2rem 0 0; }
+    .id-status { font-weight: 600; margin: 0.6rem 0; }
+    table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; font-size: 0.92rem; }
+    .table-wrap { overflow-x: auto; }
+    th, td { border: 1px solid var(--border-subtle); padding: 0.45rem 0.6rem; text-align: left; vertical-align: top; }
+    th { background: var(--surface-soft); }
+    @media (max-width: 480px) {
+      main { padding: 0.75rem 0.6rem 2rem; }
+      h1 { font-size: 1.3rem; }
+      pre { font-size: 0.8rem; }
+      .card { padding: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="kicker">Reference</p>
+    <h1>Inventory API recording preparation helper</h1>
+  </header>
+
+  <div class="callout warn" role="note">
+    <p><strong>Preparation reference. Use prepared code or request templates during a recording only if the project permits them and they are declared as starting materials. This page does not run requests or SQL.</strong></p>
+    <p>Using a browser during recording must match the approved app list. Browser use is not automatically approved.</p>
+  </div>
+
+  <nav aria-label="Sections on this page">
+    <ul>
+      <li><a href="#php">PHP methods</a></li>
+      <li><a href="#postman">Postman requests</a></li>
+      <li><a href="#sql">SQL checks</a></li>
+      <li><a href="#expected">Expected results</a></li>
+    </ul>
+  </nav>
+
+  <section id="php" aria-labelledby="php-title">
+    <h2 id="php-title">PHP: four methods</h2>
+    <p class="hint"><strong>What:</strong> four methods for the stock movement controller, in the order you read them: validate, normalize, stock check, store.
+    <strong>Where:</strong> replace the matching method in your controller.
+    <strong>Why:</strong> together they check the input, save the signed quantity, and refuse OUT movements that would drop stock below zero.</p>
+    <div class="callout">
+      <p><strong>Replace the matching method, not the whole controller. Keep existing imports, FIELDS, index and history helper.</strong></p>
+    </div>
+
+    <article class="card">
+      <h3>1. validateMovement</h3>
+      <p class="hint"><strong>What:</strong> checks product, location, type, quantity and note.
+      <strong>Where:</strong> the private method below <code>store()</code>.
+      <strong>Why:</strong> bad input is rejected before anything is saved.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="php-validate" data-label="validateMovement">Copy validateMovement</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code id="php-validate">private function validateMovement(array $data)
+{
+    return validator($data, [
+        'product_id' =&gt; ['required', 'integer', 'exists:products,id'],
+        'location_id' =&gt; ['required', 'integer', 'exists:locations,id'],
+        'type' =&gt; ['required', 'string', Rule::in(StockMovement::TYPES)],
+        'qty' =&gt; ['required', 'integer', 'not_in:0'],
+        'note' =&gt; ['nullable', 'string'],
+    ])-&gt;validate();
+}</code></pre>
+    </article>
+
+    <article class="card">
+      <h3>2. normalizeQtyByType</h3>
+      <p class="hint"><strong>What:</strong> turns the quantity into the signed value that gets stored. IN is positive, OUT is negative.
+      <strong>Where:</strong> the private method, called from <code>store()</code>.
+      <strong>Why:</strong> the database stores the sign, so a later stock sum is correct.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="php-normalize" data-label="normalizeQtyByType">Copy normalizeQtyByType</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code id="php-normalize">private function normalizeQtyByType(string $type, int $qty): int
+{
+    return match ($type) {
+        'IN' =&gt; abs($qty),
+        'OUT' =&gt; -abs($qty),
+        default =&gt; $qty,
+    };
+}</code></pre>
+    </article>
+
+    <article class="card">
+      <h3>3. hasSufficientStockForOut</h3>
+      <p class="hint"><strong>What:</strong> reads current stock and checks that an OUT movement will not make it negative.
+      <strong>Where:</strong> the private method, called from <code>store()</code> only for OUT.
+      <strong>Why:</strong> it prevents over-issuing stock.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="php-stock" data-label="hasSufficientStockForOut">Copy hasSufficientStockForOut</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code id="php-stock">private function hasSufficientStockForOut(int $productId, int $locationId, int $qty): array
+{
+    $stock = StockMovement::stockOnHand($productId, $locationId);
+
+    return [
+        'ok' =&gt; $stock + $qty &gt;= 0,
+        'stock' =&gt; $stock,
+    ];
+}</code></pre>
+    </article>
+
+    <article class="card">
+      <h3>4. store</h3>
+      <p class="hint"><strong>What:</strong> the request entry point. It validates, normalizes, runs the OUT check inside a transaction, saves the row, and returns JSON.
+      <strong>Where:</strong> replace the existing <code>store()</code> method.
+      <strong>Why:</strong> one place that ties the three helpers together.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="php-store" data-label="store">Copy store</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code id="php-store">public function store()
+{
+    $data = request()-&gt;only(self::FIELDS);
+    $validated = $this-&gt;validateMovement($data);
+    $validated['qty'] = $this-&gt;normalizeQtyByType($validated['type'], $validated['qty']);
+
+    return DB::transaction(function () use ($validated) {
+        if ($validated['type'] === 'OUT') {
+            $result = $this-&gt;hasSufficientStockForOut(
+                $validated['product_id'],
+                $validated['location_id'],
+                $validated['qty']
+            );
+
+            if (!$result['ok']) {
+                return response()-&gt;json([
+                    'message' =&gt; 'Insufficient stock',
+                    'current_stock' =&gt; $result['stock'],
+                    'requested_out' =&gt; abs($validated['qty']),
+                ], 422);
+            }
+        }
+
+        $movement = StockMovement::create($validated);
+
+        return response()-&gt;json([
+            'message' =&gt; 'Movement added successfully',
+            'data' =&gt; $movement,
+            'current_stock' =&gt; StockMovement::stockOnHand(
+                $validated['product_id'],
+                $validated['location_id']
+            ),
+        ], 201);
+    });
+}</code></pre>
+    </article>
+
+    <div class="callout">
+      <p><strong>Concurrency:</strong> a database transaction alone does not guarantee concurrency safety. Two requests can read the same stock before either writes. The demo requests in this guide run one at a time, so this is not tested here.</p>
+      <p><strong>ADJUST:</strong> ADJUST keeps signed corrections as entered. The OUT availability check is not a guarantee for every movement type.</p>
+    </div>
+  </section>
+
+  <section id="postman" aria-labelledby="postman-title">
+    <h2 id="postman-title">Postman: requests</h2>
+    <p class="hint"><strong>What:</strong> create one demo product, one demo warehouse, then movements.
+    <strong>Where:</strong> Postman, base URL <code>http://127.0.0.1:8008</code>.
+    <strong>Why:</strong> the movement bodies need the real product and location IDs from the earlier responses.</p>
+    <ul class="note">
+      <li>Every request: header <code>Accept: application/json</code>. Body type raw JSON (<code>Content-Type: application/json</code>).</li>
+      <li>Send each successful movement once. Repeats change stock.</li>
+      <li>Save the returned <code>data.id</code> for each created record.</li>
+      <li>If a unique code is already used, change it to a new value. Do not retry blindly.</li>
+    </ul>
+
+    <article class="card" aria-labelledby="products-title">
+      <h3 id="products-title">Create product</h3>
+      <p class="hint"><strong>What:</strong> one demo product.
+      <strong>Where:</strong> POST to <code id="url-products">http://127.0.0.1:8008/products</code>.
+      <strong>Why:</strong> its <code>data.id</code> is the product ID for the movements.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="url-products" data-label="products URL">Copy URL</button>
+        <button type="button" class="copy" data-target="body-products" data-label="products body">Copy JSON body</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code id="body-products">{"sku":"DEMO-KB-001","name":"Demo Keyboard","unit_cost_cents":10000,"min_stock":2}</code></pre>
+      <p class="note"><strong>Expected:</strong> HTTP 201 and <code>data.id</code>. Save the ID.</p>
+    </article>
+
+    <article class="card" aria-labelledby="locations-title">
+      <h3 id="locations-title">Create location</h3>
+      <p class="hint"><strong>What:</strong> one demo warehouse.
+      <strong>Where:</strong> POST to <code id="url-locations">http://127.0.0.1:8008/locations</code>.
+      <strong>Why:</strong> its <code>data.id</code> is the location ID for the movements.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="url-locations" data-label="locations URL">Copy URL</button>
+        <button type="button" class="copy" data-target="body-locations" data-label="locations body">Copy JSON body</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code id="body-locations">{"code":"DEMO-WH-001","address":"Demo warehouse"}</code></pre>
+      <p class="note"><strong>Expected:</strong> HTTP 201 and <code>data.id</code>. Save the ID.</p>
+    </article>
+
+    <section aria-labelledby="ids-title">
+      <h3 id="ids-title">Enter the saved IDs</h3>
+      <p class="hint"><strong>What:</strong> the real <code>data.id</code> values from the product and location responses.
+      <strong>Where:</strong> the two fields below. They start blank and are not remembered between visits.
+      <strong>Why:</strong> the movement bodies below use these values, so they cannot be copied with guessed IDs.</p>
+      <div class="field">
+        <label for="product-id">Product ID</label>
+        <input type="text" id="product-id" inputmode="numeric" autocomplete="off" aria-describedby="product-error">
+        <p class="field-error" id="product-error" role="alert"></p>
+      </div>
+      <div class="field">
+        <label for="location-id">Location ID</label>
+        <input type="text" id="location-id" inputmode="numeric" autocomplete="off" aria-describedby="location-error">
+        <p class="field-error" id="location-error" role="alert"></p>
+      </div>
+      <p class="id-status" id="ids-status" role="status" aria-live="polite">Enter both IDs above. Bodies stay hidden until both are valid.</p>
+    </section>
+
+    <h3>Movements (POST)</h3>
+    <p class="hint"><strong>Where:</strong> POST to <code id="url-movements">http://127.0.0.1:8008/movements</code> for every card below. Send them in this order.</p>
+
+    <article class="card" data-type="IN" data-qty="10" aria-labelledby="mv-in-10-title">
+      <h3 id="mv-in-10-title">1. IN 10</h3>
+      <p class="hint"><strong>What:</strong> receive 10 units into stock.
+      <strong>Why:</strong> starts the stock count.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="url-movements" data-label="movements URL">Copy URL</button>
+        <button type="button" class="copy" data-body data-label="IN 10 body" disabled>Copy JSON body</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code>Body hidden until both IDs are valid.</code></pre>
+      <p class="note"><strong>Expected:</strong> HTTP 201, <code>data.qty</code> 10, <code>current_stock</code> 10, movement count 1.</p>
+    </article>
+
+    <article class="card" data-type="OUT" data-qty="4" aria-labelledby="mv-out-4-title">
+      <h3 id="mv-out-4-title">2. OUT 4</h3>
+      <p class="hint"><strong>What:</strong> issue 4 units.
+      <strong>Why:</strong> stock goes from 10 to 6.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="url-movements" data-label="movements URL">Copy URL</button>
+        <button type="button" class="copy" data-body data-label="OUT 4 body" disabled>Copy JSON body</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code>Body hidden until both IDs are valid.</code></pre>
+      <p class="note"><strong>Expected:</strong> HTTP 201, <code>data.qty</code> -4, <code>current_stock</code> 6, movement count 2.</p>
+    </article>
+
+    <article class="card" data-type="OUT" data-qty="7" aria-labelledby="mv-out-7-title">
+      <h3 id="mv-out-7-title">3. OUT 7</h3>
+      <p class="hint"><strong>What:</strong> issue 7 units when only 6 are left.
+      <strong>Why:</strong> shows the stock check refusing an over-issue.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="url-movements" data-label="movements URL">Copy URL</button>
+        <button type="button" class="copy" data-body data-label="OUT 7 body" disabled>Copy JSON body</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code>Body hidden until both IDs are valid.</code></pre>
+      <p class="note"><strong>Expected:</strong> HTTP 422, message "Insufficient stock", <code>current_stock</code> 6, <code>requested_out</code> 7, movement count 2. No row is saved.</p>
+    </article>
+
+    <article class="card" data-type="OUT" data-qty="6" aria-labelledby="mv-out-6-title">
+      <h3 id="mv-out-6-title">4. OUT 6</h3>
+      <p class="hint"><strong>What:</strong> issue the remaining 6 units.
+      <strong>Why:</strong> stock goes to exactly 0.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="url-movements" data-label="movements URL">Copy URL</button>
+        <button type="button" class="copy" data-body data-label="OUT 6 body" disabled>Copy JSON body</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code>Body hidden until both IDs are valid.</code></pre>
+      <p class="note"><strong>Expected:</strong> HTTP 201, <code>data.qty</code> -6, <code>current_stock</code> 0, movement count 3.</p>
+    </article>
+
+    <article class="card" data-type="IN" data-qty="0" aria-labelledby="mv-in-0-title">
+      <h3 id="mv-in-0-title">5. IN 0</h3>
+      <p class="hint"><strong>What:</strong> a zero quantity.
+      <strong>Why:</strong> shows validation rejecting it.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="url-movements" data-label="movements URL">Copy URL</button>
+        <button type="button" class="copy" data-body data-label="IN 0 body" disabled>Copy JSON body</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code>Body hidden until both IDs are valid.</code></pre>
+      <p class="note"><strong>Expected:</strong> HTTP 422 validation error. No row is saved. The database stays at stock 0 and movement count 3.</p>
+    </article>
+  </section>
+
+  <section id="sql" aria-labelledby="sql-title">
+    <h2 id="sql-title">SQL: read-only checks</h2>
+    <div class="callout">
+      <p><strong>DBeaver connection:</strong> it must be the same API database, <code>db.sqlite</code>. Not <code>local.sqlite</code> or <code>testing.sqlite</code>.</p>
+      <p>Re-run the SELECTs to refresh the results. Read the row that matches your demo product and location IDs. Do not edit grid cells.</p>
+    </div>
+
+    <article class="card">
+      <h3>Movement rows</h3>
+      <p class="hint"><strong>What:</strong> every stored movement with its signed quantity.
+      <strong>Where:</strong> DBeaver, run against <code>db.sqlite</code>.
+      <strong>Why:</strong> confirms what was actually saved.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="sql-rows" data-label="movement rows SQL">Copy SQL</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code id="sql-rows">SELECT id, product_id, location_id, type, qty
+FROM stock_movements
+ORDER BY id;</code></pre>
+    </article>
+
+    <article class="card">
+      <h3>Stock and count per product and location</h3>
+      <p class="hint"><strong>What:</strong> movement count and stock on hand for each product and location pair.
+      <strong>Where:</strong> DBeaver, run against <code>db.sqlite</code>.
+      <strong>Why:</strong> compare with the expected counts and stock.</p>
+      <div class="actions">
+        <button type="button" class="copy" data-target="sql-summary" data-label="stock summary SQL">Copy SQL</button>
+        <span class="feedback" role="status" aria-live="polite"></span>
+      </div>
+      <pre tabindex="0"><code id="sql-summary">SELECT product_id, location_id,
+       COUNT(*) AS movement_count,
+       SUM(qty) AS stock_on_hand
+FROM stock_movements
+GROUP BY product_id, location_id;</code></pre>
+    </article>
+  </section>
+
+  <section id="expected" aria-labelledby="expected-title">
+    <h2 id="expected-title">Expected results</h2>
+    <div class="callout warn">
+      <p><strong>These are EXPECTED results, not pre-verified Mac outcomes.</strong> Mark a check as passed only after you observe the actual response or query result.</p>
+    </div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Expected results table, scrollable">
+      <table>
+        <thead>
+          <tr><th scope="col">Request</th><th scope="col">HTTP</th><th scope="col">Database movement count</th><th scope="col">Database stock</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">IN10</th><td>201</td><td>1</td><td>10</td></tr>
+          <tr><th scope="row">OUT4</th><td>201</td><td>2</td><td>6</td></tr>
+          <tr><th scope="row">OUT7</th><td>422</td><td>2</td><td>6</td></tr>
+          <tr><th scope="row">OUT6</th><td>201</td><td>3</td><td>0</td></tr>
+          <tr><th scope="row">IN0</th><td>422</td><td>3</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Rejected requests (OUT7 and IN0) save no row, so their database counts stay the same as the row above them. This table assumes the requests run in this order on a fresh demo product and location.</p>
+    <ul>
+      <li>The existing GET <code>/movements</code> endpoint shows absolute quantities for IN and OUT.</li>
+      <li>The POST response and the database show the stored signed <code>qty</code>.</li>
+      <li>The test data is a fresh demo product and warehouse. Do not reset or delete data.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+  function parsePositiveId(raw) {
+    if (!/^[0-9]+$/.test(raw)) return null;
+    var n = Number(raw);
+    return Number.isSafeInteger(n) && n > 0 ? n : null;
+  }
+
+  function movementBody(ids, type, qty) {
+    return JSON.stringify({ product_id: ids.product, location_id: ids.location, type: type, qty: qty }, null, 2);
+  }
+
+  function readIds() {
+    var p = parsePositiveId(document.getElementById('product-id').value);
+    var l = parsePositiveId(document.getElementById('location-id').value);
+    return p === null || l === null ? null : { product: p, location: l };
+  }
+
+  function checkField(inputId, errorId) {
+    var input = document.getElementById(inputId);
+    var error = document.getElementById(errorId);
+    var raw = input.value;
+    var valid = parsePositiveId(raw) !== null;
+    error.textContent = valid || raw === '' ? '' : 'Enter a whole number of 1 or more, using digits only.';
+    input.setAttribute('aria-invalid', valid ? 'false' : 'true');
+    return valid;
+  }
+
+  function updateAll() {
+    checkField('product-id', 'product-error');
+    checkField('location-id', 'location-error');
+    var ids = readIds();
+    document.getElementById('ids-status').textContent = ids
+      ? 'Both IDs are valid. The bodies below use these IDs.'
+      : 'Enter both IDs above. Bodies stay hidden until both are valid.';
+    document.querySelectorAll('article[data-type]').forEach(function (card) {
+      var code = card.querySelector('pre code');
+      var btn = card.querySelector('button[data-body]');
+      code.textContent = ids
+        ? movementBody(ids, card.dataset.type, Number(card.dataset.qty))
+        : 'Body hidden until both IDs are valid.';
+      btn.disabled = !ids;
+    });
+  }
+
+  function setFeedback(el, message, kind) {
+    el.textContent = message;
+    el.className = 'feedback' + (kind ? ' ' + kind : '');
+  }
+
+  function selectNode(el) {
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  async function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {
+        // fall back to execCommand below
+      }
+    }
+    var previousFocus = document.activeElement;
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    ta.style.top = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try {
+      ok = document.execCommand('copy') === true;
+    } catch (e) {
+      ok = false;
+    } finally {
+      document.body.removeChild(ta);
+      if (previousFocus && previousFocus.focus) previousFocus.focus();
+    }
+    return ok;
+  }
+
+  async function handleCopy(btn) {
+    var card = btn.closest('.card');
+    var feedback = card.querySelector('.feedback');
+    var label = btn.dataset.label;
+    var text;
+    var target;
+    if (btn.hasAttribute('data-body')) {
+      var ids = readIds();
+      if (!ids) {
+        setFeedback(feedback, 'Enter both valid IDs first. Nothing was copied.', 'err');
+        return;
+      }
+      text = movementBody(ids, card.dataset.type, Number(card.dataset.qty));
+      target = card.querySelector('pre code');
+    } else {
+      target = document.getElementById(btn.dataset.target);
+      text = target.textContent;
+    }
+    var ok = await copyText(text);
+    if (ok) {
+      setFeedback(feedback, 'Copied ' + label + '.', 'ok');
+    } else {
+      selectNode(target);
+      setFeedback(feedback, 'Copy did not work in this browser. The text is selected: press Cmd+C on Mac or Ctrl+C on Windows.', 'err');
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('button.copy');
+    if (btn && !btn.disabled) handleCopy(btn);
+  });
+  document.getElementById('product-id').addEventListener('input', updateAll);
+  document.getElementById('location-id').addEventListener('input', updateAll);
+  updateAll();
+</script>
+</body>
+</html>
