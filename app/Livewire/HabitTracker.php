@@ -119,6 +119,10 @@ class HabitTracker extends Component
             ? $habits->filter(fn($h) => $logs->has($h->id . '-' . $todayStr))->count()
             : 0;
 
+        // Day summary: completions logged on the selected day, across all habits
+        $summaryDate = '2026-10-15';
+        $dayCompletions = HabitLog::whereDate('date', $summaryDate)->count();
+
         return view('livewire.habit-tracker', [
             'habits' => $habits,
             'dates' => $dates,
@@ -126,6 +130,8 @@ class HabitTracker extends Component
             'streaks' => $streaks,
             'completedToday' => $completedToday,
             'totalHabits' => $totalHabits,
+            'summaryDate' => $summaryDate,
+            'dayCompletions' => $dayCompletions,
         ]);
     }
 }

@@ -17,6 +17,12 @@
         </button>
     </div>
 
+    {{-- Day summary --}}
+    <div class="bg-white rounded-2xl border border-gray-100 px-5 py-3 mb-6 dark:bg-gray-900 dark:border-gray-800">
+        <span class="text-xs text-gray-400 uppercase tracking-wide">Day summary</span>
+        <p class="text-sm text-gray-900 dark:text-gray-100 mt-1">{{ $dayCompletions }} completions on {{ $summaryDate }}</p>
+    </div>
+
     {{-- Create/edit form --}}
     @if($showForm)
     <div class="bg-white rounded-2xl border border-gray-100 p-5 mb-6 dark:bg-gray-900 dark:border-gray-800">
