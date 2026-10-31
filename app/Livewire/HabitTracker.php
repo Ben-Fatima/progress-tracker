@@ -121,9 +121,7 @@ class HabitTracker extends Component
 
         // Day summary: completions logged on the selected day, across all habits
         $summaryDate = '2026-10-15';
-        $dayCompletions = HabitLog::where('date', '>=', $summaryDate)
-            ->where('date', '<', date('Y-m-d', strtotime($summaryDate . ' +1 day')))
-            ->count();
+        $dayCompletions = HabitLog::whereDate('date', $summaryDate)->count();
 
         return view('livewire.habit-tracker', [
             'habits' => $habits,
