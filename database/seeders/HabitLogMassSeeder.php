@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
  * Two populations:
  *  - 100 active habits x ~4000 recent days: feeds the dashboard and the
  *    Oct-15 summary count (stays 100).
- *  - 3000 INACTIVE habits x 200 old days only: invisible to the dashboard
+ *  - 50000 INACTIVE habits x 20 old days only: invisible to the dashboard
  *    (active() scope) and never logged near Oct-15, but they raise the
  *    distinct habit_id count high enough that SQLite's skip-scan on the
  *    (habit_id, date) index becomes unattractive — so the date-only filter
@@ -37,7 +37,7 @@ class HabitLogMassSeeder extends Seeder
         }
 
         $inactiveCount = DB::table('habits')->where('active', false)->count();
-        for ($i = $inactiveCount; $i < 3000; $i++) {
+        for ($i = $inactiveCount; $i < 50000; $i++) {
             DB::table('habits')->insert([
                 'name' => 'Old Habit ' . ($i + 1),
                 'icon' => 'x',
@@ -84,7 +84,7 @@ class HabitLogMassSeeder extends Seeder
 
         // Old history for inactive habits — starts 4000 days back, so none
         // of it can land on the summary date and inflate its count.
-        for ($d = 4000; $d < 4200; $d++) {
+        for ($d = 4000; $d < 4020; $d++) {
             $date = date('Y-m-d', strtotime('-' . $d . ' days'));
             foreach ($inactiveIds as $habitId) {
                 $chunk[] = [
